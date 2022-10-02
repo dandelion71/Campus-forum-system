@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dandelion.system.mapper.MenuMapper">
+
+
+    <select id="selectPermsById" resultType="java.lang.String">
+        SELECT DISTINCT
+            perms
+        FROM
+            sys_user su,
+            sys_user_role sur,
+            sys_role sr,
+            sys_menu sm,
+            sys_role_menu srm
+        <where>
+            su.id = sur.user_id
+            AND sr.id = sur.role_id
+            AND sr.id = srm.role_id
+            AND sm.id = srm.menu_id
+            AND su.id =#{id}
+        </where>
+
+    </select>
+    <select id="selectDataScopeById" resultType="java.lang.String">
+        SELECT
+            data_scope
+        FROM
+            sys_user su,
+            sys_user_role sur,
+            sys_role sr
+        <where>
+            su.id = sur.user_id
+            AND sur.role_id = sr.id
+            AND su.id = #{id}
+        </where>
+    </select>
+</mapper>

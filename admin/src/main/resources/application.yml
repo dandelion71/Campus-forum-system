@@ -1,0 +1,22 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+spring:
+  datasource:
+    druid:
+      username: root
+      password: 123456
+      url: jdbc:mysql://localhost:3306/bbs?serverTimezone=Asia/Shanghai
+      driver-class-name: com.mysql.cj.jdbc.Driver
+  redis:
+    port: 6379
+    host: localhost
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+# Swagger配置
+swagger:
+  # 是否关闭swagger
+  enabled: true
