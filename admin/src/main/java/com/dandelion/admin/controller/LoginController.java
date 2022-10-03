@@ -10,6 +10,7 @@ import com.dandelion.system.dao.LoginBody;
 import com.dandelion.system.dao.LoginUser;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.User;
+import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.UserService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,9 @@ public class LoginController {
     private UserService userService;
 
     @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
     private AuthenticationManager authenticationManager;
 
     @Autowired
@@ -55,6 +59,7 @@ public class LoginController {
         String jwt = JwtUtil.createJWT(loginUser.getUuid());
         Map<String, String> map = new HashMap<>();
         map.put("token", jwt);
+        map.put("role",userMapper.getRoleKey(loginUser.getUser().getId()));
         redisCache.setCacheObject(loginUser.getUuid(), loginUser);
         userService.update(new LambdaUpdateWrapper<User>()
                 .eq(User::getUserName, loginBody.getUserName())

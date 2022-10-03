@@ -13,24 +13,13 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("sys_user")
-public class User implements Serializable {
+@TableName("sys_Muted")
+public class Muted implements Serializable {
     public static final long serialVersionUID =1L;
     @TableId(value = "id",type = IdType.AUTO)
     private Long id;
-    private String userName;
-    private String password;
-    private String email;
-    private String phonenumber;
-    private String sex;
-    private String avatar;
-    private String status;
-    private String delFlag;
-    private String loginIp;
-    private Date loginDate;
-    private Date pwdUpdateDate;
-    private String updateBy;
-    private Date updateTime;
+    private Long userId;
+    private Date mutedTime;
+    private String createBy;
     private Date createTime;
-    private String muted;
 }

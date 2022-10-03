@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.config.SecurityConfig;
 import com.dandelion.common.enums.BusinessType;
+import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.User;
@@ -32,20 +33,29 @@ public class UserController {
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:user:list')")
     public ResponseResult list() {
-        return ResponseResult.success(userService.list(new LambdaQueryWrapper<User>().ne(User::getDelFlag, 2)),1);
+        return ResponseResult.success(userService.list(new LambdaQueryWrapper<User>().ne(User::getDelFlag, 2)), Massage.SELECT.value());
     }
 
     @ApiOperation(value = "查询用户", notes = "根据 id 查询用户")
-    @GetMapping("/{id}")
+    @GetMapping("/query/byId/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
-    public ResponseResult getOne(@PathVariable String id) {
+    public ResponseResult getOneById(@PathVariable String id) {
         return ResponseResult.success(userService.getOne(new LambdaQueryWrapper<User>()
                 .ne(User::getDelFlag, 2)
-                .eq(User::getId, id)),1);
+                .eq(User::getId, id)),Massage.SELECT.value());
+    }
+
+    @ApiOperation(value = "查询用户", notes = "根据 用户名 查询用户")
+    @GetMapping("/query/byUserName/{userName}")
+    @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
+    public ResponseResult getOneByUserName(@PathVariable String userName) {
+        return ResponseResult.success(userService.getOne(new LambdaQueryWrapper<User>()
+                .ne(User::getDelFlag, 2)
+                .eq(User::getUserName, userName)),Massage.SELECT.value());
     }
 
     @ApiOperation(value = "查询用户名是否存在", notes = "根据 username 查询用户")
-    @GetMapping("/getUserNameExists/{username}")
+    @GetMapping("/query/getUserNameExists/{username}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
     public ResponseResult getUserNameExists(@PathVariable String username) {
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, username));
@@ -54,23 +64,12 @@ public class UserController {
     }
 
     @ApiOperation(value = "查询用户头像", notes = "根据 username 查询用户头像")
-    @GetMapping("/getAvatar/{username}")
+    @GetMapping("/query/getAvatar/{username}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
     public ResponseResult getAvatar(@PathVariable String username) {
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, username));
         Assert.notNull(user, "用户不存在");
-        return ResponseResult.success(user.getAvatar(),1);
-    }
-
-    @ApiOperation(value = "用户添加")
-    @Log(title = "用户管理", businessType = BusinessType.INSERT)
-    @PostMapping("/add")
-    @PreAuthorize("@dandelion.hasAuthority('system:user:add')")
-    public ResponseResult add(@RequestBody User user) {
-        user.setCreateTime(new Date());
-        user.setPassword(new SecurityConfig().passwordEncoder().encode(user.getPassword()));
-        userService.save(user);
-        return ResponseResult.success(HttpStatus.OK.value(), 2);
+        return ResponseResult.success(user.getAvatar(),Massage.SELECT.value());
     }
 
     @ApiOperation(value = "用户信息编辑")
@@ -81,10 +80,10 @@ public class UserController {
         user.setUpdateBy(SecurityUtils.getUsername());
         user.setUpdateTime(new Date());
         userService.updateById(user);
-        return ResponseResult.success(HttpStatus.OK.value(), 3);
+        return ResponseResult.success(HttpStatus.OK.value(), Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "用户是否停用状态修改",notes = "0 不停用 1 停用")
+    @ApiOperation(value = "认证修改",notes = "0 未认证 1 认证")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit/{status}/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:edit')")
@@ -95,7 +94,7 @@ public class UserController {
                 .set(User::getUpdateBy, SecurityUtils.getUsername())
                 .set(User::getUpdateTime, new Date()));
         ;
-        return ResponseResult.success(HttpStatus.OK.value(), 3);
+        return ResponseResult.success(HttpStatus.OK.value(), Massage.UPDATE.value());
     }
 
     @ApiOperation(value = "用户密码修改",notes = "根据 id 修改用户密码")
@@ -114,7 +113,7 @@ public class UserController {
                 .set(User::getPwdUpdateDate, new Date())
                 .set(User::getUpdateBy, SecurityUtils.getUsername())
                 .set(User::getUpdateTime, new Date()));
-        return ResponseResult.success(HttpStatus.OK.value(), 3);
+        return ResponseResult.success(HttpStatus.OK.value(), Massage.UPDATE.value());
     }
 
     @ApiOperation(value = "用户删除",notes = "根据 id 删除用户")
@@ -127,6 +126,6 @@ public class UserController {
                 .set(User::getDelFlag, '2')
                 .set(User::getUpdateBy, SecurityUtils.getUsername())
                 .set(User::getUpdateTime, new Date()));
-        return ResponseResult.success(HttpStatus.OK.value(), 4);
+        return ResponseResult.success(HttpStatus.OK.value(), Massage.DELETE.value());
     }
 }

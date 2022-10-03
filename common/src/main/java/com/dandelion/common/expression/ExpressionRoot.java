@@ -19,7 +19,7 @@ public class ExpressionRoot {
     public boolean hasAuthority(String authority){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-        if (menuMapper.selectDataScopeById(loginUser.getUser().getId()).equals("1")){
+        if (loginUser.getUser().getId()==1L){
             return true;
         }
         List<String> permissions = loginUser.getPermissions();

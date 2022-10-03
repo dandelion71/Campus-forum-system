@@ -7,30 +7,25 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("sys_user")
-public class User implements Serializable {
+@TableName("sys_Role")
+public class Role {
     public static final long serialVersionUID =1L;
+
     @TableId(value = "id",type = IdType.AUTO)
     private Long id;
-    private String userName;
-    private String password;
-    private String email;
-    private String phonenumber;
-    private String sex;
-    private String avatar;
-    private String status;
+    private String roleName;
+    private String roleKey;
+    private Integer roleSort;
     private String delFlag;
-    private String loginIp;
-    private Date loginDate;
-    private Date pwdUpdateDate;
+    private String createBy;
+    private Date createTime;
     private String updateBy;
     private Date updateTime;
-    private Date createTime;
-    private String muted;
+    private String remark;
+
 }

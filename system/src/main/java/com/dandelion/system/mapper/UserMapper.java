@@ -7,4 +7,8 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
     String getPassword(String id);
+
+    String getRoleKey(Long id);
+
+    void setRole(Long userId,Long roleId);
 }

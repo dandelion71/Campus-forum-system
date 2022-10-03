@@ -18,15 +18,7 @@ public class ResponseResult {
     private Object data;
 
 
-    public static ResponseResult success(Object data,int status){
-        String msg;
-        switch (status){
-            case 1:msg="查询成功";break;
-            case 2:msg="添加成功";break;
-            case 3:msg="修改成功";break;
-            case 4:msg="删除成功";break;
-            default:msg=null;
-        }
+    public static ResponseResult success(Object data,String msg){
         return success(HttpStatus.OK.value(),msg,data);
     }
 

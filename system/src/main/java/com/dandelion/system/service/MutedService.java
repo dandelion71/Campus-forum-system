@@ -1,7 +1,7 @@
 package com.dandelion.system.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.dandelion.system.dao.User;
+import com.dandelion.system.dao.Muted;
 
-public interface UserService extends IService<User> {
+public interface MutedService extends IService<Muted> {
 }

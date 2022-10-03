@@ -1,12 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dandelion.system.mapper.UserMapper">
+    <update id="setRole">
+        insert into sys_user_role(user_id, role_id) values (#{userId},#{roleId})
+    </update>
+
 
     <select id="getPassword" resultType="java.lang.String">
         select password
         from sys_user
         <where>
             id=#{id}
+        </where>
+    </select>
+    <select id="getRoleKey" resultType="java.lang.String">
+        select
+            role_key
+        from
+            sys_user su,
+            sys_user_role sur,
+            sys_role sr
+        <where>
+            su.id = sur.user_id
+            AND sur.role_id = sr.id
+            AND su.id = #{id}
+            AND not sr.del_flag = 2
         </where>
     </select>
 </mapper>
