@@ -1,12 +1,15 @@
 package com.dandelion.common.utils;
 
 import com.dandelion.system.dao.LoginUser;
+import com.dandelion.system.mapper.RoleMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
+
 
 public class SecurityUtils {
-
     /**
      * 用户ID
      **/

@@ -60,7 +60,7 @@ public class UserController {
     public ResponseResult getUserNameExists(@PathVariable String username) {
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, username));
         Assert.isNull(user, "登录名已存在");
-        return ResponseResult.success("登录名不存在");
+        return ResponseResult.success("登录名可以使用");
     }
 
     @ApiOperation(value = "查询用户头像", notes = "根据 username 查询用户头像")
@@ -101,7 +101,7 @@ public class UserController {
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit/pwd/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:edit')")
-    public ResponseResult editPwd(@RequestBody String password, @PathVariable String id) {
+    public ResponseResult editPwd(@RequestParam String password, @PathVariable String id) {
         String encodePassword = new SecurityConfig().passwordEncoder().encode(password);
         String rawPassword = userMapper.getPassword(id);
         if (rawPassword.equals(encodePassword)) {

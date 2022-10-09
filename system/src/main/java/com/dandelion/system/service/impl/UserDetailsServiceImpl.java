@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.dandelion.system.dao.LoginUser;
 import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.MenuMapper;
-import com.dandelion.system.service.MutedService;
+import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +22,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private UserService userService;
 
     @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
     private MenuMapper menuMapper;
 
     @Override
@@ -33,6 +36,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if ("2".equals(user.getMuted())){
             throw new RuntimeException("该用户已被永久封禁");
         }
-        return new LoginUser(user,UUID.randomUUID().toString(),menuMapper.selectPermsById(user.getId()));
+        return new LoginUser(user,UUID.randomUUID().toString(),userMapper.getRoleKey(user.getId()),menuMapper.selectPermsById(user.getId()));
     }
 }

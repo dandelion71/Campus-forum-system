@@ -37,7 +37,7 @@ public class ResponseResult {
     }
 
     public static ResponseResult success(String msg){
-        return success(HttpStatus.BAD_REQUEST.value(),msg);
+        return success(HttpStatus.OK.value(),msg);
     }
 
 

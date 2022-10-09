@@ -45,9 +45,6 @@ public class SysOperLog
     /** 操作人员 */
     private String operName;
 
-    /** 部门名称 */
-    private String deptName;
-
     /** 请求url */
     private String operUrl;
 

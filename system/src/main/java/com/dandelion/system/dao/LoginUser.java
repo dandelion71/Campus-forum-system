@@ -21,12 +21,14 @@ public class LoginUser implements UserDetails {
 
     private String uuid;
 
+    private String roleKey;
+
     private List<String> permissions;
 
     @JSONField(serialize = false)
     private List<SimpleGrantedAuthority> authorities;
 
-    public LoginUser(User user, String uuid, List<String> permissions) {
+    public LoginUser(User user, String uuid,String roleKey, List<String> permissions) {
         this.user=user;
         this.uuid=uuid;
         this.permissions=permissions;

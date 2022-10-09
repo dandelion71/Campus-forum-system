@@ -27,7 +27,7 @@ public class MenuController {
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:menu:list')")
     public ResponseResult list() {
-        return ResponseResult.success(menuService.list(), Massage.SELECT.value());
+        return ResponseResult.success(menuService.list(new LambdaQueryWrapper<Menu>().eq(Menu::getParentId,0)), Massage.SELECT.value());
     }
 
     @ApiOperation(value = "查询菜单", notes = "根据 id 查询菜单")

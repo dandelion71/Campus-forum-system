@@ -24,7 +24,6 @@
             su.id = sur.user_id
             AND sur.role_id = sr.id
             AND su.id = #{id}
-            AND not sr.del_flag = 2
         </where>
     </select>
 </mapper>

@@ -11,21 +11,6 @@ public enum BusinessType
     OTHER,
 
     /**
-    * 登录
-    */
-    LOGIN,
-
-    /**
-     * 登出
-     */
-    LOGOUT,
-
-    /**
-     * 强退
-     */
-    FORCE,
-
-    /**
      * 新增
      */
     INSERT,
@@ -41,20 +26,25 @@ public enum BusinessType
     DELETE,
 
     /**
+    * 登录
+    */
+    LOGIN,
+
+    /**
+     * 登出
+     */
+    LOGOUT,
+
+    /**
+     * 强退
+     */
+    FORCE,
+
+    /**
      * 授权
      */
     GRANT,
 
-    /**
-     * 导出
-     */
-    EXPORT,
-
-    /**
-     * 导入
-     */
-    IMPORT,
-    
     /**
      * 清空数据
      */

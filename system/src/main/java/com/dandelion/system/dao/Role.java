@@ -20,8 +20,7 @@ public class Role {
     private Long id;
     private String roleName;
     private String roleKey;
-    private Integer roleSort;
-    private String delFlag;
+    private String isDel;
     private String createBy;
     private Date createTime;
     private String updateBy;

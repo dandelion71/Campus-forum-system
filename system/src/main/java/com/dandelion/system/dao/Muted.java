@@ -1,6 +1,7 @@
 package com.dandelion.system.dao;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -22,4 +23,7 @@ public class Muted implements Serializable {
     private Date mutedTime;
     private String createBy;
     private Date createTime;
+    private String effective;
+    @TableField(exist = false)
+    private User user;
 }
