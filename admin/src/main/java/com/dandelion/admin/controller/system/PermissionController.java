@@ -1,16 +1,19 @@
 package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.Menu;
 import com.dandelion.system.dao.ResponseResult;
+import com.dandelion.system.dao.Role;
 import com.dandelion.system.mapper.RoleMapper;
 import com.dandelion.system.service.MenuService;
 import com.dandelion.system.service.RoleService;
-//import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -29,11 +32,13 @@ public class PermissionController {
     private MenuService menuService;
 
 
-//    @ApiOperation(value = "权限管理")
+    @ApiOperation(value = "权限管理")
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:permission:list')")
-    public ResponseResult roleList(){
-        return ResponseResult.success(roleService.list(), Massage.SELECT.value());
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
+        Page<Role> rolePage = new Page<>(currentPage, pageSize);
+        IPage<Role> page = roleService.page(rolePage);
+        return ResponseResult.success(page,Massage.SELECT.value());
     }
 
 //    @ApiOperation(value = "权限查询",notes = "根据 roleId 查询拥有权限")

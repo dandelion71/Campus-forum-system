@@ -2,6 +2,8 @@ package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.config.SecurityConfig;
 import com.dandelion.common.enums.BusinessType;
@@ -13,7 +15,7 @@ import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.UserService;
-//import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,11 +36,13 @@ public class UserController {
     @Autowired
     private RedisCache redisCache;
 
-//    @ApiOperation(value = "查询用户", notes = "查询用户列表")
+    @ApiOperation(value = "查询用户", notes = "查询用户列表")
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:user:list')")
-    public ResponseResult list() {
-        return ResponseResult.success(userService.list(new LambdaQueryWrapper<User>().ne(User::getDelFlag, 2)), Massage.SELECT.value());
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<User> userPage = new Page<>(currentPage, pageSize);
+        IPage<User> page = userService.page(userPage, new LambdaQueryWrapper<User>().ne(User::getDelFlag, 2).orderByDesc(User::getLoginDate));
+        return ResponseResult.success(page, Massage.SELECT.value());
     }
 
 //    @ApiOperation(value = "查询用户", notes = "根据 id 查询用户")

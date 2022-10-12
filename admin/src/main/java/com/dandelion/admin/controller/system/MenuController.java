@@ -2,6 +2,8 @@ package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
@@ -9,7 +11,7 @@ import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.Menu;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.service.MenuService;
-//import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.Assert;
@@ -23,11 +25,13 @@ public class MenuController {
     @Autowired
     private MenuService menuService;
 
-//    @ApiOperation(value = "查询菜单", notes = "查询菜单列表")
+    @ApiOperation(value = "查询菜单", notes = "查询菜单列表")
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:menu:list')")
-    public ResponseResult list() {
-        return ResponseResult.success(menuService.list(new LambdaQueryWrapper<Menu>().eq(Menu::getParentId,0)), Massage.SELECT.value());
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
+        Page<Menu> menuPage = new Page<>(currentPage, pageSize);
+        IPage<Menu> page = menuService.page(menuPage, new LambdaQueryWrapper<Menu>().eq(Menu::getParentId, 0));
+        return ResponseResult.success(page, Massage.SELECT.value());
     }
 
 //    @ApiOperation(value = "查询菜单", notes = "根据 id 查询菜单")

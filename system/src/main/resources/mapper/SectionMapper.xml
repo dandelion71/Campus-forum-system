@@ -2,4 +2,27 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dandelion.system.mapper.SectionMapper">
 
+    <insert id="insertSectionTag">
+        insert into section_tag(section_id, tag_id) VALUES (#{sectionId},#{tagId})
+    </insert>
+    <select id="selectHaveTagBySectionId" resultType="com.dandelion.system.dao.Tag">
+        SELECT t.*
+        FROM section s,section_tag st,tag t
+        <where>
+            s.id=st.section_id and t.id=st.tag_id and section_id = #{sectionId}
+        </where>
+    </select>
+    <select id="selectNoneTagBySectionId" resultType="com.dandelion.system.dao.Tag">
+        SELECT *
+        FROM tag
+        <where>
+            id not in (
+                SELECT t.id
+                FROM section s,section_tag st,tag t
+                <where>
+                    s.id=st.section_id and t.id=st.tag_id and section_id = #{sectionId}
+                </where>
+            )
+        </where>
+    </select>
 </mapper>

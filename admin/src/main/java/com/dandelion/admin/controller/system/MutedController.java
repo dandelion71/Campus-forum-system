@@ -2,6 +2,8 @@ package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
@@ -12,7 +14,7 @@ import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.MutedMapper;
 import com.dandelion.system.service.MutedService;
 import com.dandelion.system.service.UserService;
-//import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,15 +36,18 @@ public class MutedController {
     @Autowired
     private UserService userService;
 
-//    @ApiOperation(value = "禁言用户查询")
+    @ApiOperation(value = "禁言用户查询")
     @PreAuthorize("@dandelion.hasAuthority('system:muted:list')")
     @GetMapping("/list")
-    public ResponseResult list() {
-        List<Muted> mutedList = mutedService.list();
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<Muted> mutedPage = new Page<>(currentPage, pageSize);
+        IPage<Muted> page = mutedService.page(mutedPage);
+        List<Muted> mutedList = page.getRecords();
         for (Muted muted : mutedList) {
             muted.setUser(userService.getOne(new LambdaQueryWrapper<User>().eq(User::getId,muted.getUserId())));
         }
-        return ResponseResult.success(mutedList, Massage.SELECT.value());
+        page.setRecords(mutedList);
+        return ResponseResult.success(page, Massage.SELECT.value());
     }
 
 //    @ApiOperation(value = "禁言用户查询",notes = "根据 用户名 查询")

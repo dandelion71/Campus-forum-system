@@ -1,6 +1,8 @@
 package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
@@ -30,8 +32,10 @@ public class TagController {
     @ApiOperation(value = "分类管理")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:list')")
     @GetMapping("/list")
-    public ResponseResult list(){
-        return ResponseResult.success(tagService.list(), Massage.SELECT.value());
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<Tag> tagPage = new Page<>(currentPage, pageSize);
+        IPage<Tag> page = tagService.page(tagPage);
+        return ResponseResult.success(page, Massage.SELECT.value());
     }
 
     @ApiOperation(value = "分类查询",notes = "根据 ID 查询分类")

@@ -1,16 +1,17 @@
 package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.Role;
-import com.dandelion.system.dao.Tag;
 import com.dandelion.system.mapper.RoleMapper;
 import com.dandelion.system.service.RoleService;
-//import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.Assert;
@@ -28,11 +29,13 @@ public class RoleController {
     @Autowired
     private RoleMapper roleMapper;
 
-//    @ApiOperation(value = "角色管理")
+    @ApiOperation(value = "角色管理")
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:role:list')")
-    public ResponseResult list(){
-        return ResponseResult.success(roleService.list(),Massage.SELECT.value());
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
+        Page<Role> rolePage = new Page<>(currentPage, pageSize);
+        IPage<Role> page = roleService.page(rolePage);
+        return ResponseResult.success(page,Massage.SELECT.value());
     }
 
 //    @ApiOperation(value = "角色名是否存在",notes = "根据 roleName 查询")

@@ -2,6 +2,8 @@ package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
@@ -9,6 +11,7 @@ import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.Posts;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.Section;
+import com.dandelion.system.mapper.SectionMapper;
 import com.dandelion.system.service.PostsService;
 import com.dandelion.system.service.SectionService;
 import io.swagger.annotations.ApiOperation;
@@ -30,11 +33,16 @@ public class SectionController {
     @Autowired
     private PostsService postsService;
 
+    @Autowired
+    private SectionMapper sectionMapper;
+
     @ApiOperation(value = "版块管理")
     @PreAuthorize("@dandelion.hasAuthority('system:section:list')")
     @GetMapping("/list")
-    public ResponseResult list(){
-        return ResponseResult.success(sectionService.list(new LambdaQueryWrapper<Section>().eq(Section::getParentId,0)), Massage.SELECT.value());
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
+        Page<Section> sectionPage = new Page<>(currentPage, pageSize);
+        IPage<Section> page = sectionService.page(sectionPage, new LambdaQueryWrapper<Section>().eq(Section::getParentId, 0));
+        return ResponseResult.success(page, Massage.SELECT.value());
     }
 
     @ApiOperation(value = "分区查询",notes = "查询分区以及分区下的版块")
@@ -62,6 +70,20 @@ public class SectionController {
         return ResponseResult.success(sectionService.list(new LambdaQueryWrapper<Section>().eq(Section::getParentId,parentId)),Massage.SELECT.value());
     }
 
+    @ApiOperation(value = "版块查询",notes = "根据 sectionId 查询版块拥有的分类")
+    @PreAuthorize("@dandelion.hasAuthority('system:section:query')")
+    @GetMapping("/query/haveTag/{sectionId}")
+    public ResponseResult queryByHaveTag(@PathVariable String sectionId){
+        return ResponseResult.success(sectionMapper.selectHaveTagBySectionId(sectionId),Massage.SELECT.value());
+    }
+
+    @ApiOperation(value = "版块查询",notes = "根据 sectionId 查询版块未拥有的分类")
+    @PreAuthorize("@dandelion.hasAuthority('system:section:query')")
+    @GetMapping("/query/noneTag/{sectionId}")
+    public ResponseResult queryByNoneTag(@PathVariable String sectionId){
+        return ResponseResult.success(sectionMapper.selectNoneTagBySectionId(sectionId),Massage.SELECT.value());
+    }
+
 
     @ApiOperation(value = "分区（版块）添加")
     @Log(title = "版块管理",businessType = BusinessType.INSERT)
@@ -71,6 +93,17 @@ public class SectionController {
         section.setCreateBy(SecurityUtils.getUsername());
         section.setCreateTime(new Date());
         sectionService.save(section);
+        return ResponseResult.success(Massage.SAVE.value());
+    }
+
+    @ApiOperation(value = "分区（版块）添加",notes = "根据 sectionId tagId 添加分类")
+    @Log(title = "版块管理",businessType = BusinessType.INSERT)
+    @PreAuthorize("@dandelion.hasAuthority('system:section:add')")
+    @PostMapping("/addTag/{sectionId}")
+    public ResponseResult addTag(@PathVariable String sectionId,@RequestBody List<String> tagIds){
+        for (String tagId : tagIds) {
+            sectionMapper.insertSectionTag(sectionId,tagId);
+        }
         return ResponseResult.success(Massage.SAVE.value());
     }
 
@@ -89,7 +122,7 @@ public class SectionController {
     @Log(title = "版块管理", businessType = BusinessType.DELETE)
     @PostMapping("/remove/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:section:remove')")
-    public ResponseResult remove(@PathVariable String id){
+    public ResponseResult removeById(@PathVariable String id){
         Section section = sectionService.getOne(new LambdaQueryWrapper<Section>().eq(Section::getId,id).ne(Section::getIsDel,'1'));
         Assert.notNull(section,"该分区（版块）不可删除");
         if(section.getParentId() == 0L){
