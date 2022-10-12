@@ -12,7 +12,7 @@ import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.MutedMapper;
 import com.dandelion.system.service.MutedService;
 import com.dandelion.system.service.UserService;
-import io.swagger.annotations.ApiOperation;
+//import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +34,7 @@ public class MutedController {
     @Autowired
     private UserService userService;
 
-    @ApiOperation(value = "禁言用户查询")
+//    @ApiOperation(value = "禁言用户查询")
     @PreAuthorize("@dandelion.hasAuthority('system:muted:list')")
     @GetMapping("/list")
     public ResponseResult list() {
@@ -45,21 +45,21 @@ public class MutedController {
         return ResponseResult.success(mutedList, Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "禁言用户查询",notes = "根据 用户名 查询")
+//    @ApiOperation(value = "禁言用户查询",notes = "根据 用户名 查询")
     @PreAuthorize("@dandelion.hasAuthority('system:muted:query')")
     @GetMapping("/query/byUserName/{userName}")
     public ResponseResult queryByUserName(@PathVariable String userName) {
         return ResponseResult.success(mutedMapper.getAllByUserName(userName), Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "禁言用户查询",notes = "根据 userId 查询")
+//    @ApiOperation(value = "禁言用户查询",notes = "根据 userId 查询")
     @PreAuthorize("@dandelion.hasAuthority('system:muted:query')")
     @GetMapping("/query/byId/{userId}")
     public ResponseResult queryById(@PathVariable String userId) {
         return ResponseResult.success(mutedService.list(new LambdaQueryWrapper<Muted>().eq(Muted::getUserId,userId)), Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "添加用户禁言",notes = "根据 userId 添加")
+//    @ApiOperation(value = "添加用户禁言",notes = "根据 userId 添加")
     @Log(title = "封禁管理",businessType = BusinessType.INSERT)
     @PreAuthorize("@dandelion.hasAuthority('system:muted:add')")
     @PostMapping("/add/byUserId/{userId}/{day}")
@@ -76,7 +76,7 @@ public class MutedController {
         return ResponseResult.success("禁言成功!");
     }
 
-    @ApiOperation(value = "解除用户禁言",notes = "根据 userId 修改")
+//    @ApiOperation(value = "解除用户禁言",notes = "根据 userId 修改")
     @Log(title = "封禁管理",businessType = BusinessType.UPDATE)
     @PreAuthorize("@dandelion.hasAuthority('system:muted:update')")
     @PostMapping("/update/byUserId/{userId}")

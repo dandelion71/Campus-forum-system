@@ -4,6 +4,7 @@ package com.dandelion.admin.controller;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.dandelion.common.utils.JwtUtil;
 import com.dandelion.common.utils.RedisCache;
+import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.common.utils.StringUtils;
 import com.dandelion.common.utils.ip.IpUtils;
 import com.dandelion.system.dao.LoginBody;
@@ -70,10 +71,8 @@ public class LoginController {
 
     @GetMapping("/user/logout")
     public ResponseResult logout() {
-        UsernamePasswordAuthenticationToken authentication = (UsernamePasswordAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
-        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-        String uuid = loginUser.getUuid();
-        redisCache.deleteObject(uuid);
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        redisCache.deleteObject(loginUser.getUuid());
         return ResponseResult.success(HttpStatus.OK.value(), "注销成功");
     }
 

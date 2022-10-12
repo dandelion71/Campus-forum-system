@@ -7,9 +7,10 @@ import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.Role;
+import com.dandelion.system.dao.Tag;
 import com.dandelion.system.mapper.RoleMapper;
 import com.dandelion.system.service.RoleService;
-import io.swagger.annotations.ApiOperation;
+//import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.Assert;
@@ -27,14 +28,14 @@ public class RoleController {
     @Autowired
     private RoleMapper roleMapper;
 
-    @ApiOperation(value = "角色管理")
+//    @ApiOperation(value = "角色管理")
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:role:list')")
     public ResponseResult list(){
         return ResponseResult.success(roleService.list(),Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "角色名是否存在",notes = "根据 roleName 查询")
+//    @ApiOperation(value = "角色名是否存在",notes = "根据 roleName 查询")
     @GetMapping("/query/roleNameExists/{roleName}")
     @PreAuthorize("@dandelion.hasAuthority('system:role:add')")
     public ResponseResult roleNameExists(@PathVariable String roleName){
@@ -43,7 +44,7 @@ public class RoleController {
         return ResponseResult.success("角色名可以使用");
     }
 
-    @ApiOperation(value = "角色权限字符串是否存在",notes = "根据 roleKey 查询")
+//    @ApiOperation(value = "角色权限字符串是否存在",notes = "根据 roleKey 查询")
     @GetMapping("/query/roleKeyExists/{roleKey}")
     @PreAuthorize("@dandelion.hasAuthority('system:role:add')")
     public ResponseResult roleKeyExists(@PathVariable String roleKey){
@@ -52,7 +53,7 @@ public class RoleController {
         return ResponseResult.success("角色权限字符串可以使用");
     }
 
-    @ApiOperation(value = "角色添加")
+//    @ApiOperation(value = "角色添加")
     @Log(title = "角色管理",businessType = BusinessType.INSERT)
     @PostMapping("/add")
     @PreAuthorize("@dandelion.hasAuthority('system:role:add')")
@@ -63,7 +64,7 @@ public class RoleController {
         return ResponseResult.success(Massage.SAVE.value());
     }
 
-    @ApiOperation(value = "角色修改",notes = "根据 roleId 修改角色")
+//    @ApiOperation(value = "角色修改",notes = "根据 roleId 修改角色")
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:role:edit')")
@@ -74,7 +75,7 @@ public class RoleController {
         return ResponseResult.success(Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "用户角色修改",notes = "根据 userId roleId 修改用户角色")
+//    @ApiOperation(value = "用户角色修改",notes = "根据 userId roleId 修改用户角色")
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit/{userId}/{roleId}")
     @PreAuthorize("@dandelion.hasAuthority('system:role:edit')")
@@ -83,23 +84,17 @@ public class RoleController {
         return ResponseResult.success(Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "角色删除",notes = "根据 id 删除角色")
+//    @ApiOperation(value = "角色删除",notes = "根据 id 删除角色")
     @Log(title = "角色管理", businessType = BusinessType.DELETE)
-    @PostMapping("/remove/{roleId}")
+    @PostMapping("/remove/{oldRoleId}/{newRoleId}")
     @PreAuthorize("@dandelion.hasAuthority('system:role:remove')")
-    public ResponseResult remove(@PathVariable String roleId){
-        Role role = roleService.getById(roleId);
-        if("1".equals(role.getIsDel())){
-            return ResponseResult.fail("该角色不可删除");
-        }
-        List<Long> userIds = roleMapper.selectRoleUserIdByRoleId(roleId);
-        //将删除的角色的用户设置为默认角色
-        for (Long userId : userIds) {
-            roleMapper.updateRoleByUserId(userId,3L);
-        }
-        roleMapper.delRoleMenuById(roleId);
-        roleMapper.delRoleUserById(roleId);
-        roleService.removeById(roleId);
+    public ResponseResult remove(@PathVariable String oldRoleId, @PathVariable String newRoleId){
+        Role role = roleService.getOne(new LambdaQueryWrapper<Role>().eq(Role::getId, oldRoleId).ne(Role::getIsDel, "1"));
+        Assert.notNull(role,"该角色不可删除");
+        roleMapper.updateUserRole(oldRoleId,newRoleId);
+        roleMapper.delRoleMenuById(oldRoleId);
+        roleMapper.delRoleUserById(oldRoleId);
+        roleService.removeById(oldRoleId);
         return ResponseResult.success(Massage.DELETE.value());
     }
 }

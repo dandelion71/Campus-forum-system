@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dandelion.system.mapper.TagMapper">
+    <update id="updatePostsTagId">
+        update posts set tag_id = #{newTagId} where tag_id = #{oldTagId}
+    </update>
+
+    <delete id="deleteSectionTagByTagId">
+        delete from section_tag where tag_id = #{tagId}
+    </delete>
+</mapper>

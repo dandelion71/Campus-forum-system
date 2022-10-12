@@ -10,7 +10,7 @@ import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.mapper.RoleMapper;
 import com.dandelion.system.service.MenuService;
 import com.dandelion.system.service.RoleService;
-import io.swagger.annotations.ApiOperation;
+//import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -29,14 +29,14 @@ public class PermissionController {
     private MenuService menuService;
 
 
-    @ApiOperation(value = "权限管理")
+//    @ApiOperation(value = "权限管理")
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:permission:list')")
     public ResponseResult roleList(){
         return ResponseResult.success(roleService.list(), Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "权限查询",notes = "根据 roleId 查询拥有权限")
+//    @ApiOperation(value = "权限查询",notes = "根据 roleId 查询拥有权限")
     @GetMapping("/query/have/{roleId}")
     @PreAuthorize("@dandelion.hasAuthority('system:permission:query')")
     public ResponseResult queryHaveByRoleId(@PathVariable String roleId){
@@ -46,7 +46,7 @@ public class PermissionController {
         return ResponseResult.success(roleMapper.selectHavePermissionByRoleId(roleId),Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "权限查询",notes = "根据 roleId 查询未拥有权限")
+//    @ApiOperation(value = "权限查询",notes = "根据 roleId 查询未拥有权限")
     @GetMapping("/query/none/{roleId}")
     @PreAuthorize("@dandelion.hasAuthority('system:permission:query')")
     public ResponseResult queryNoneByRoleId(@PathVariable String roleId){
@@ -56,7 +56,7 @@ public class PermissionController {
         return ResponseResult.success(roleMapper.selectNonePermissionByRoleId(roleId),Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "权限增加",notes = "根据 roleId menuId 添加权限")
+//    @ApiOperation(value = "权限增加",notes = "根据 roleId menuId 添加权限")
     @Log(title = "权限管理",businessType = BusinessType.INSERT)
     @PostMapping("/query/{roleId}/{menuId}")
     @PreAuthorize("@dandelion.hasAuthority('system:permission:add')")
@@ -65,7 +65,7 @@ public class PermissionController {
        return ResponseResult.success(Massage.SAVE.value());
     }
 
-    @ApiOperation(value = "权限删除",notes = "根据 roleId menuId 删除权限")
+//    @ApiOperation(value = "权限删除",notes = "根据 roleId menuId 删除权限")
     @Log(title = "权限管理",businessType = BusinessType.DELETE)
     @PostMapping("/remove/{roleId}/{menuId}")
     @PreAuthorize("@dandelion.hasAuthority('system:permission:remove')")

@@ -6,12 +6,14 @@ import com.dandelion.common.annotation.Log;
 import com.dandelion.common.config.SecurityConfig;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
+import com.dandelion.common.utils.RedisCache;
 import com.dandelion.common.utils.SecurityUtils;
+import com.dandelion.system.dao.LoginUser;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.UserService;
-import io.swagger.annotations.ApiOperation;
+//import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,14 +31,17 @@ public class UserController {
     @Autowired
     private UserMapper userMapper;
 
-    @ApiOperation(value = "查询用户", notes = "查询用户列表")
+    @Autowired
+    private RedisCache redisCache;
+
+//    @ApiOperation(value = "查询用户", notes = "查询用户列表")
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:user:list')")
     public ResponseResult list() {
         return ResponseResult.success(userService.list(new LambdaQueryWrapper<User>().ne(User::getDelFlag, 2)), Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "查询用户", notes = "根据 id 查询用户")
+//    @ApiOperation(value = "查询用户", notes = "根据 id 查询用户")
     @GetMapping("/query/byId/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
     public ResponseResult getOneById(@PathVariable String id) {
@@ -45,7 +50,7 @@ public class UserController {
                 .eq(User::getId, id)),Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "查询用户", notes = "根据 用户名 查询用户")
+//    @ApiOperation(value = "查询用户", notes = "根据 用户名 查询用户")
     @GetMapping("/query/byUserName/{userName}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
     public ResponseResult getOneByUserName(@PathVariable String userName) {
@@ -54,7 +59,7 @@ public class UserController {
                 .eq(User::getUserName, userName)),Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "查询用户名是否存在", notes = "根据 username 查询用户")
+//    @ApiOperation(value = "查询用户名是否存在", notes = "根据 username 查询用户")
     @GetMapping("/query/getUserNameExists/{username}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
     public ResponseResult getUserNameExists(@PathVariable String username) {
@@ -63,7 +68,7 @@ public class UserController {
         return ResponseResult.success("登录名可以使用");
     }
 
-    @ApiOperation(value = "查询用户头像", notes = "根据 username 查询用户头像")
+//    @ApiOperation(value = "查询用户头像", notes = "根据 username 查询用户头像")
     @GetMapping("/query/getAvatar/{username}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
     public ResponseResult getAvatar(@PathVariable String username) {
@@ -72,7 +77,7 @@ public class UserController {
         return ResponseResult.success(user.getAvatar(),Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "用户信息编辑")
+//    @ApiOperation(value = "用户信息编辑")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:user:edit')")
@@ -83,7 +88,7 @@ public class UserController {
         return ResponseResult.success(HttpStatus.OK.value(), Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "认证修改",notes = "0 未认证 1 认证")
+//    @ApiOperation(value = "认证修改",notes = "0 未认证 1 认证")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit/{status}/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:edit')")
@@ -97,7 +102,7 @@ public class UserController {
         return ResponseResult.success(HttpStatus.OK.value(), Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "用户密码修改",notes = "根据 id 修改用户密码")
+//    @ApiOperation(value = "用户密码修改",notes = "根据 id 修改用户密码")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit/pwd/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:edit')")
@@ -113,10 +118,12 @@ public class UserController {
                 .set(User::getPwdUpdateDate, new Date())
                 .set(User::getUpdateBy, SecurityUtils.getUsername())
                 .set(User::getUpdateTime, new Date()));
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        redisCache.deleteObject(loginUser.getUuid());
         return ResponseResult.success(HttpStatus.OK.value(), Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "用户删除",notes = "根据 id 删除用户")
+//    @ApiOperation(value = "用户删除",notes = "根据 id 删除用户")
     @Log(title = "用户管理", businessType = BusinessType.DELETE)
     @PostMapping("/remove/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:remove')")

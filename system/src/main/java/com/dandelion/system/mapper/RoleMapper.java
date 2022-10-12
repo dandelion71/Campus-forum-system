@@ -18,6 +18,8 @@ public interface RoleMapper extends BaseMapper<Role> {
 
     void updateRoleByUserId(Long userId, Long roleId);
 
+    void updateUserRole(String oleRoleId, String newRoleId);
+
     void insertRoleMenuById(String roleId,String menuId);
 
     void delRoleUserById(String roleId);

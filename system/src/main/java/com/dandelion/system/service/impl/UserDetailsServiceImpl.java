@@ -33,6 +33,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (Objects.isNull(user)){
             throw new RuntimeException("用户名或密码错误");
         }
+        user.setPassword(userMapper.getPassword(String.valueOf(user.getId())));
         if ("2".equals(user.getMuted())){
             throw new RuntimeException("该用户已被永久封禁");
         }

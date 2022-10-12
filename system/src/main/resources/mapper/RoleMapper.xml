@@ -7,6 +7,9 @@
     <update id="updateRoleByUserId">
         update sys_user_role set role_id =#{roleId} where user_id=#{userId}
     </update>
+    <update id="updateUserRole">
+        update sys_user_role set role_id =#{newRoleId} where role_id=#{oldRoleId}
+    </update>
     <delete id="delRoleUserById">
         delete from sys_user_role where role_id = #{roleId}
     </delete>
