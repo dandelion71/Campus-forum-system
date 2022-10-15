@@ -46,7 +46,6 @@ public class MutedController {
         for (Muted muted : mutedList) {
             muted.setUser(userService.getOne(new LambdaQueryWrapper<User>().eq(User::getId,muted.getUserId())));
         }
-        page.setRecords(mutedList);
         return ResponseResult.success(page, Massage.SELECT.value());
     }
 

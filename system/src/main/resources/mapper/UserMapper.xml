@@ -26,4 +26,18 @@
             AND su.id = #{id}
         </where>
     </select>
+    <select id="getIdByUserName" resultType="java.lang.String">
+        select id
+        from sys_user
+        <where>
+            user_name = #{userName}
+        </where>
+    </select>
+    <select id="getUserVoById" resultType="com.dandelion.system.vo.UserVo">
+        select id,user_name
+        from sys_user
+        <where>
+            id = #{id}
+        </where>
+    </select>
 </mapper>

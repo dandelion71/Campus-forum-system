@@ -25,4 +25,11 @@
             )
         </where>
     </select>
+    <select id="getSectionVoById" resultType="com.dandelion.system.vo.SectionVo">
+        select id,section_name
+        from section
+        <where>
+            id = #{id}
+        </where>
+    </select>
 </mapper>

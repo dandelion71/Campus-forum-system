@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -16,8 +17,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName("sys_oper_log")
-public class SysOperLog
-{
+public class SysOperLog implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 日志主键 */

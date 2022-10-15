@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
@@ -15,7 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("section")
-public class Section {
+public class Section implements Serializable {
     public static final long serialVersionUID =1L;
     @TableId(value = "id",type = IdType.AUTO)
     private Long id;

@@ -8,4 +8,11 @@
     <delete id="deleteSectionTagByTagId">
         delete from section_tag where tag_id = #{tagId}
     </delete>
+    <select id="getTagVoById" resultType="com.dandelion.system.vo.TagVo">
+        select id,tag_name
+        from tag
+        <where>
+            id = #{id}
+        </where>
+    </select>
 </mapper>
