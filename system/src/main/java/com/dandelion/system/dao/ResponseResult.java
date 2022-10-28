@@ -17,27 +17,46 @@ public class ResponseResult {
 
     private Object data;
 
-
-    public static ResponseResult success(Object data,String msg){
-        return success(HttpStatus.OK.value(),msg,data);
-    }
-
-    public static ResponseResult success(int code,String msg,Object data){
+    private static ResponseResult success(int code,String msg,Object data){
         ResponseResult r = new ResponseResult();
         r.setCode(code);
         r.setMsg(msg);
         r.setData(data);
         return r;
     }
-    public static ResponseResult success(int code,String msg){
+    private static ResponseResult success(int code,String msg){
         ResponseResult r = new ResponseResult();
         r.setCode(code);
         r.setMsg(msg);
         return r;
     }
+    private static ResponseResult success(int code,Object data){
+        ResponseResult r = new ResponseResult();
+        r.setCode(code);
+        r.setData(data);
+        return r;
+    }
+
+    private static ResponseResult success(int code){
+        ResponseResult r = new ResponseResult();
+        r.setCode(code);
+        return r;
+    }
+
+    public static ResponseResult success(Object data,String msg){
+        return success(HttpStatus.OK.value(),msg,data);
+    }
 
     public static ResponseResult success(String msg){
         return success(HttpStatus.OK.value(),msg);
+    }
+
+    public static ResponseResult success(Object data){
+        return success(HttpStatus.OK.value(),data);
+    }
+
+    public static ResponseResult success(){
+        return success(HttpStatus.OK.value());
     }
 
 

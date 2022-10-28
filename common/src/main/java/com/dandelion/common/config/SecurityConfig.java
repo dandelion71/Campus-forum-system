@@ -45,6 +45,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
+                .antMatchers(
+                        "/user/section/**",
+                        "/files/**"
+                        ).permitAll()
                 .antMatchers("/user/login",
                         "/druid/**",
                         "/user/register",

@@ -15,6 +15,7 @@ import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.UserService;
+import com.dandelion.system.vo.UserVo;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,8 @@ import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/system/user")
@@ -39,38 +42,53 @@ public class UserController {
     @ApiOperation(value = "查询用户", notes = "查询用户列表")
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:user:list')")
-    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "10") Integer pageSize) {
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
         Page<User> userPage = new Page<>(currentPage, pageSize);
         IPage<User> page = userService.page(userPage, new LambdaQueryWrapper<User>().ne(User::getDelFlag, 2).orderByDesc(User::getLoginDate));
-        return ResponseResult.success(page, Massage.SELECT.value());
+        List<User> users = userPage.getRecords();
+        for (User user : users) {
+            user.setRole(userMapper.getRole(user.getId()));
+        }
+        return ResponseResult.success(page);
     }
 
 //    @ApiOperation(value = "查询用户", notes = "根据 id 查询用户")
     @GetMapping("/query/byId/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
     public ResponseResult getOneById(@PathVariable String id) {
-        return ResponseResult.success(userService.getOne(new LambdaQueryWrapper<User>()
+        User user = userService.getOne(new LambdaQueryWrapper<User>()
                 .ne(User::getDelFlag, 2)
-                .eq(User::getId, id)),Massage.SELECT.value());
+                .eq(User::getId, id));
+        user.setRole(userMapper.getRole(user.getId()));
+        return ResponseResult.success(user);
     }
 
 //    @ApiOperation(value = "查询用户", notes = "根据 用户名 查询用户")
     @GetMapping("/query/byUserName/{userName}")
     @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
     public ResponseResult getOneByUserName(@PathVariable String userName) {
-        return ResponseResult.success(userService.getOne(new LambdaQueryWrapper<User>()
+        User user = userService.getOne(new LambdaQueryWrapper<User>()
                 .ne(User::getDelFlag, 2)
-                .eq(User::getUserName, userName)),Massage.SELECT.value());
+                .eq(User::getUserName, userName));
+        Assert.notNull(user,"未查询到该用户");
+        user.setRole(userMapper.getRole(user.getId()));
+        return ResponseResult.success(user,Massage.SELECT.value());
+    }
+
+    @GetMapping("/queryUser/byUserName/{queryString}")
+    @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
+    public ResponseResult queryUser(@PathVariable String queryString) {
+        return ResponseResult.success(userMapper.getUsersByQueryString(queryString),Massage.SELECT.value());
     }
 
 //    @ApiOperation(value = "查询用户名是否存在", notes = "根据 username 查询用户")
-    @GetMapping("/query/getUserNameExists/{username}")
-    @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
-    public ResponseResult getUserNameExists(@PathVariable String username) {
-        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, username));
-        Assert.isNull(user, "登录名已存在");
-        return ResponseResult.success("登录名可以使用");
-    }
+//    @GetMapping("/query/getUserNameExists/{username}")
+//    @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
+//    public ResponseResult getUserNameExists(@PathVariable String username) {
+//        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, username));
+//        Assert.isNull(user, "登录名已存在");
+//        return ResponseResult.success("登录名可以使用");
+//    }
 
 //    @ApiOperation(value = "查询用户头像", notes = "根据 username 查询用户头像")
     @GetMapping("/query/getAvatar/{username}")
@@ -86,10 +104,16 @@ public class UserController {
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:user:edit')")
     public ResponseResult edit(@RequestBody User user) {
+        if(Objects.nonNull(user.getUserName())){
+            Assert.isNull(userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, user.getUserName())), "登录名已存在");
+        }
+        if(Objects.nonNull(user.getPhonenumber())){
+            Assert.isNull(userService.getOne(new LambdaQueryWrapper<User>().eq(User::getPhonenumber, user.getPhonenumber())), "手机号已绑定其他用户");
+        }
         user.setUpdateBy(SecurityUtils.getUsername());
         user.setUpdateTime(new Date());
         userService.updateById(user);
-        return ResponseResult.success(HttpStatus.OK.value(), Massage.UPDATE.value());
+        return ResponseResult.success(Massage.UPDATE.value());
     }
 
 //    @ApiOperation(value = "认证修改",notes = "0 未认证 1 认证")
@@ -103,7 +127,7 @@ public class UserController {
                 .set(User::getUpdateBy, SecurityUtils.getUsername())
                 .set(User::getUpdateTime, new Date()));
         ;
-        return ResponseResult.success(HttpStatus.OK.value(), Massage.UPDATE.value());
+        return ResponseResult.success(Massage.UPDATE.value());
     }
 
 //    @ApiOperation(value = "用户密码修改",notes = "根据 id 修改用户密码")
@@ -114,7 +138,7 @@ public class UserController {
         String encodePassword = new SecurityConfig().passwordEncoder().encode(password);
         String rawPassword = userMapper.getPassword(id);
         if (rawPassword.equals(encodePassword)) {
-            return ResponseResult.success(HttpStatus.OK.value(), "与旧密码相同");
+            return ResponseResult.success("与旧密码相同");
         }
         userService.update(new LambdaUpdateWrapper<User>()
                 .eq(User::getId, id)
@@ -124,19 +148,17 @@ public class UserController {
                 .set(User::getUpdateTime, new Date()));
         LoginUser loginUser = SecurityUtils.getLoginUser();
         redisCache.deleteObject(loginUser.getUuid());
-        return ResponseResult.success(HttpStatus.OK.value(), Massage.UPDATE.value());
+        return ResponseResult.success(Massage.UPDATE.value());
     }
 
 //    @ApiOperation(value = "用户删除",notes = "根据 id 删除用户")
-    @Log(title = "用户管理", businessType = BusinessType.DELETE)
-    @PostMapping("/remove/{id}")
-    @PreAuthorize("@dandelion.hasAuthority('system:user:remove')")
-    public ResponseResult remove(@PathVariable String id) {
-        userService.update(new LambdaUpdateWrapper<User>()
-                .eq(User::getId, id)
-                .set(User::getDelFlag, '2')
-                .set(User::getUpdateBy, SecurityUtils.getUsername())
-                .set(User::getUpdateTime, new Date()));
-        return ResponseResult.success(HttpStatus.OK.value(), Massage.DELETE.value());
-    }
+//    @Log(title = "用户管理", businessType = BusinessType.DELETE)
+//    @PostMapping("/remove/{id}")
+//    @PreAuthorize("@dandelion.hasAuthority('system:user:remove')")
+//    public ResponseResult remove(@PathVariable String id) {
+//        userService.update(new LambdaUpdateWrapper<User>()
+//                .eq(User::getId, id)
+//                .set(User::getDelFlag, 2));
+//        return ResponseResult.success(HttpStatus.OK.value(), Massage.DELETE.value());
+//    }
 }

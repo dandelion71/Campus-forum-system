@@ -34,10 +34,44 @@
         </where>
     </select>
     <select id="getUserVoById" resultType="com.dandelion.system.vo.UserVo">
-        select id,user_name
+        select id,user_name,avatar,status,del_flag,muted
         from sys_user
         <where>
             id = #{id}
+        </where>
+    </select>
+    <select id="getRoleId" resultType="java.lang.Long">
+        select
+            sr.id
+        from
+        sys_user su,
+        sys_user_role sur,
+        sys_role sr
+        <where>
+            su.id = sur.user_id
+            AND sur.role_id = sr.id
+            AND su.id = #{id}
+        </where>
+    </select>
+    <select id="getRole" resultType="com.dandelion.system.vo.RoleVo">
+        select
+            sr.id,role_name
+        from
+        sys_user su,
+        sys_user_role sur,
+        sys_role sr
+        <where>
+            su.id = sur.user_id
+            AND sur.role_id = sr.id
+            AND su.id = #{id}
+        </where>
+    </select>
+    <select id="getUsersByQueryString" resultType="com.dandelion.system.vo.UserVo">
+        select id,user_name,avatar,status,del_flag,muted
+        from sys_user
+        where del_flag &lt;&gt; 2 and sys_user.user_name like CONCAT('%',#{queryString},'%')
+        <where>
+
         </where>
     </select>
 </mapper>

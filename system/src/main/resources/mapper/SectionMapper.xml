@@ -5,6 +5,15 @@
     <insert id="insertSectionTag">
         insert into section_tag(section_id, tag_id) VALUES (#{sectionId},#{tagId})
     </insert>
+    <insert id="insertSectionUser">
+        insert into user_section(section_id, user_id) VALUES (#{sectionId},#{userId})
+    </insert>
+    <delete id="delSectionUser">
+        delete from user_section where user_id=#{userId} and section_id=#{sectionId}
+    </delete>
+    <delete id="delSectionTag">
+        delete from section_tag where tag_id=#{tagId} and section_id=#{sectionId}
+    </delete>
     <select id="selectHaveTagBySectionId" resultType="com.dandelion.system.dao.Tag">
         SELECT t.*
         FROM section s,section_tag st,tag t
@@ -31,5 +40,18 @@
         <where>
             id = #{id}
         </where>
+    </select>
+    <select id="selectTopSection" resultType="com.dandelion.system.vo.SectionVo">
+        select s.id,s.section_name,count(1) num
+        from section s,posts p
+        WHERE s.id = p.section_id
+        GROUP BY s.id
+        ORDER BY num DESC
+        LIMIT 0,5
+    </select>
+    <select id="getSectionModerator" resultType="com.dandelion.system.vo.UserVo">
+        SELECT su.id,su.user_name,su.avatar
+        FROM section s,user_section us,sys_user su
+        WHERE s.id = us.section_id and us.user_id = su.id and s.id = #{sectionId}
     </select>
 </mapper>

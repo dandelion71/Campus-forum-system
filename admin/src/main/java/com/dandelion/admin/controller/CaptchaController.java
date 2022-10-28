@@ -66,6 +66,6 @@ public class CaptchaController {
         Map<String, String> map = new HashMap<>();
         map.put("uuid", uuid);
         map.put("img", Base64.encode(os.toByteArray()));
-        return ResponseResult.success(HttpStatus.OK.value(),"验证码获取成功",map);
+        return ResponseResult.success(map);
     }
 }

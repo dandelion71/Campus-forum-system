@@ -3,6 +3,7 @@ package com.dandelion.common.expression;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.LoginUser;
 import com.dandelion.system.mapper.MenuMapper;
+import com.dandelion.system.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,13 +16,11 @@ import java.util.List;
  */
 @Component("dandelion")
 public class ExpressionRoot {
-
     @Autowired
-    private MenuMapper menuMapper;
+    private UserMapper userMapper;
     public boolean hasAuthority(String authority){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-        if (SecurityUtils.isAdmin(loginUser.getUser().getId())){
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        if (SecurityUtils.isAdmin(userMapper.getRoleId(loginUser.getUser().getId()))){
             return true;
         }
         List<String> permissions = loginUser.getPermissions();

@@ -59,21 +59,25 @@ public class LoginController {
         LoginUser loginUser = (LoginUser) authenticate.getPrincipal();
         String jwt = JwtUtil.createJWT(loginUser.getUuid());
         Map<String, String> map = new HashMap<>();
+        Long id = loginUser.getUser().getId();
         map.put("token", jwt);
-        map.put("role",userMapper.getRoleKey(loginUser.getUser().getId()));
+        map.put("role",userMapper.getRoleKey(id));
+        map.put("id",String.valueOf(id));
+        map.put("username", loginUser.getUsername());
         redisCache.setCacheObject(loginUser.getUuid(), loginUser);
         userService.update(new LambdaUpdateWrapper<User>()
                 .eq(User::getUserName, loginBody.getUserName())
                 .set(User::getLoginDate, new Date())
                 .set(User::getLoginIp, IpUtils.getIpAddr(request)));
-        return ResponseResult.success(HttpStatus.OK.value(), "登录成功", map);
+        return ResponseResult.success(map);
     }
 
+    @ApiOperation(value = "退出")
     @GetMapping("/user/logout")
     public ResponseResult logout() {
         LoginUser loginUser = SecurityUtils.getLoginUser();
         redisCache.deleteObject(loginUser.getUuid());
-        return ResponseResult.success(HttpStatus.OK.value(), "注销成功");
+        return ResponseResult.success();
     }
 
     /**

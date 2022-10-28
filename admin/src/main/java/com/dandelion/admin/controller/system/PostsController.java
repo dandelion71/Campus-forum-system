@@ -8,12 +8,14 @@ import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.SecurityUtils;
+import com.dandelion.system.dao.Comment;
 import com.dandelion.system.dao.Posts;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.SectionMapper;
 import com.dandelion.system.mapper.TagMapper;
 import com.dandelion.system.mapper.UserMapper;
+import com.dandelion.system.service.CommentService;
 import com.dandelion.system.service.PostsService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,11 +41,14 @@ public class PostsController {
     @Autowired
     private SectionMapper sectionMapper;
 
+    @Autowired
+    private CommentService commentService;
+
     @ApiOperation(value = "帖子管理")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:list')")
     @GetMapping("/list/{sectionId}")
     public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,
-                               @RequestParam(defaultValue = "10") Integer pageSize,
+                               @RequestParam(defaultValue = "5") Integer pageSize,
                                @PathVariable String sectionId) {
         Page<Posts> postsPage = new Page<>(currentPage, pageSize);
         IPage<Posts> page = postsService.page(postsPage, new LambdaQueryWrapper<Posts>()
@@ -58,7 +63,7 @@ public class PostsController {
             post.setTag(tagMapper.getTagVoById(post.getTagId()));
             post.setSection(sectionMapper.getSectionVoById(post.getSectionId()));
         }
-        return ResponseResult.success(page, Massage.SELECT.value());
+        return ResponseResult.success(page);
     }
 
     @ApiOperation(value = "帖子添加")
@@ -105,6 +110,7 @@ public class PostsController {
     @PostMapping("/remove/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:remove')")
     public ResponseResult remove(@PathVariable String id){
+        commentService.update(new LambdaUpdateWrapper<Comment>().eq(Comment::getPostId,id).set(Comment::getDelFlag,2));
         postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,id).set(Posts::getDelFlag,2));
         return ResponseResult.success(Massage.DELETE.value());
     }

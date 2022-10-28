@@ -17,7 +17,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
+import java.awt.*;
 import java.util.Date;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/system/menu")
@@ -30,42 +32,49 @@ public class MenuController {
     @PreAuthorize("@dandelion.hasAuthority('system:menu:list')")
     public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
         Page<Menu> menuPage = new Page<>(currentPage, pageSize);
-        IPage<Menu> page = menuService.page(menuPage, new LambdaQueryWrapper<Menu>().eq(Menu::getParentId, 0));
-        return ResponseResult.success(page, Massage.SELECT.value());
+        IPage<Menu> page = menuService.page(menuPage, new LambdaQueryWrapper<Menu>().eq(Menu::getParentId, 0).orderByAsc(Menu::getOrderNum));
+        return ResponseResult.success(page);
+    }
+
+    @ApiOperation(value = "查询菜单", notes = "查询父菜单列表")
+    @GetMapping("/queryMaster")
+    @PreAuthorize("@dandelion.hasAuthority('system:menu:list')")
+    public ResponseResult queryMaster() {
+        return ResponseResult.success(menuService.list(new LambdaQueryWrapper<Menu>().eq(Menu::getParentId, 0).orderByAsc(Menu::getOrderNum)));
     }
 
 //    @ApiOperation(value = "查询菜单", notes = "根据 id 查询菜单")
     @PreAuthorize("@dandelion.hasAuthority('system:menu:query')")
-    @GetMapping(value = "/{id}")
-    public ResponseResult getOneMenu(@PathVariable Long id) {
-        return ResponseResult.success(menuService.list(new LambdaQueryWrapper<Menu>().eq(Menu::getId, id)),Massage.SELECT.value());
+    @GetMapping(value = "/query/byId/{id}")
+    public ResponseResult byId(@PathVariable Long id) {
+        Menu menu = menuService.getOne(new LambdaQueryWrapper<Menu>().eq(Menu::getId, id));
+        Assert.notNull(menu,"未找到该菜单");
+        return ResponseResult.success(menu,Massage.SELECT.value());
     }
 
 //    @ApiOperation(value = "查询菜单名是否存在", notes = "根据 menuName 查询菜单")
+//    @PreAuthorize("@dandelion.hasAuthority('system:menu:query')")
+//    @GetMapping(value = "/menuExists/{menuName}")
+//    public ResponseResult menuExists(@PathVariable String menuName) {
+//        Menu menu = menuService.getOne(new LambdaQueryWrapper<Menu>().eq(Menu::getMenuName, menuName));
+//        Assert.isNull(menu,"菜单名已存在");
+//        return ResponseResult.success();
+//    }
+
+    //    @ApiOperation(value = "查询菜单", notes = "根据 menuName 查询菜单")
     @PreAuthorize("@dandelion.hasAuthority('system:menu:query')")
-    @GetMapping(value = "/menuExists/{menuName}")
-    public ResponseResult menuExists(@PathVariable String menuName) {
+    @GetMapping(value = "/query/byMenuName/{menuName}")
+    public ResponseResult byMenuName(@PathVariable String menuName) {
         Menu menu = menuService.getOne(new LambdaQueryWrapper<Menu>().eq(Menu::getMenuName, menuName));
-        Assert.isNull(menu,"菜单名已存在");
-        return ResponseResult.success("菜单名不存在");
+        Assert.notNull(menu,"未找到该菜单");
+        return ResponseResult.success(menu,Massage.SELECT.value());
     }
 
 //    @ApiOperation(value = "查询子菜单", notes = "根据 父id 查询菜单")
     @PreAuthorize("@dandelion.hasAuthority('system:menu:query')")
     @GetMapping(value = "/list/{parentId}")
     public ResponseResult getChildMenu(@PathVariable Long parentId) {
-        return ResponseResult.success(menuService.list(new LambdaQueryWrapper<Menu>().eq(Menu::getParentId, parentId)),Massage.SELECT.value());
-    }
-
-//    @ApiOperation(value = "添加菜单")
-    @Log(title = "菜单管理", businessType = BusinessType.INSERT)
-    @PreAuthorize("@dandelion.hasAuthority('system:menu:add')")
-    @PostMapping("/add")
-    public ResponseResult add(@RequestBody Menu menu){
-        menu.setCreateBy(SecurityUtils.getUsername());
-        menu.setCreateTime(new Date());
-        menuExists(menu.getMenuName());
-        return ResponseResult.success(menuService.save(menu),Massage.SAVE.value());
+        return ResponseResult.success(menuService.list(new LambdaQueryWrapper<Menu>().eq(Menu::getParentId, parentId).orderByAsc(Menu::getOrderNum)));
     }
 
 //    @ApiOperation(value = "修改菜单")
@@ -73,43 +82,11 @@ public class MenuController {
     @PreAuthorize("@dandelion.hasAuthority('system:menu:edit')")
     @PostMapping("/edit")
     public ResponseResult edit(@RequestBody Menu menu){
+        if(Objects.nonNull(menu.getMenuName())){
+            Assert.isNull(menuService.getOne(new LambdaQueryWrapper<Menu>().eq(Menu::getMenuName, menu.getMenuName())),"菜单名已存在");
+        }
         menu.setUpdateBy(SecurityUtils.getUsername());
         menu.setUpdateTime(new Date());
         return ResponseResult.success(menuService.updateById(menu),Massage.UPDATE.value());
-    }
-
-//    @ApiOperation(value = "修改菜单是否可用",notes = "根据 id 修改菜单状态")
-    @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
-    @PreAuthorize("@dandelion.hasAuthority('system:menu:edit')")
-    @PostMapping("/status/{status}/{id}")
-    public ResponseResult editStatus(@PathVariable String id, @PathVariable String status){
-        return ResponseResult.success(
-                menuService.update(new LambdaUpdateWrapper<Menu>()
-                        .eq(Menu::getId,id)
-                        .set(Menu::getStatus,status)
-                        .set(Menu::getUpdateBy,SecurityUtils.getUsername())
-                        .set(Menu::getUpdateTime,new Date())),Massage.UPDATE.value());
-    }
-
-//    @ApiOperation(value = "修改菜单是否隐藏",notes = "根据 id 修改菜单显隐")
-    @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
-    @PreAuthorize("@dandelion.hasAuthority('system:menu:edit')")
-    @PostMapping("/visible/{Visible}/{id}")
-    public ResponseResult editVisible(@PathVariable String id, @PathVariable String Visible){
-        return ResponseResult.success(
-                menuService.update(new LambdaUpdateWrapper<Menu>()
-                        .eq(Menu::getId,id)
-                        .set(Menu::getVisible,Visible)
-                        .set(Menu::getUpdateBy,SecurityUtils.getUsername())
-                        .set(Menu::getUpdateTime,new Date())),Massage.UPDATE.value());
-    }
-
-//    @ApiOperation(value = "删除菜单",notes = "根据 id 删除菜单")
-    @Log(title = "菜单管理", businessType = BusinessType.DELETE)
-    @PreAuthorize("@dandelion.hasAuthority('system:menu:remove')")
-    @PostMapping("/remove/{id}")
-    public ResponseResult remove(@PathVariable String id){
-        menuService.removeById(id);
-        return ResponseResult.success(null,Massage.DELETE.value());
     }
 }

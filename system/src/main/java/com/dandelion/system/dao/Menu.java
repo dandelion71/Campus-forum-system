@@ -25,9 +25,6 @@ public class Menu implements Serializable {
   private Integer orderNum;
   private String path;
   private String component;
-  private String menuType;
-  private String visible;
-  private String status;
   private String perms;
   private String icon;
   private String createBy;

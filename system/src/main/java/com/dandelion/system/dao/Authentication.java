@@ -1,10 +1,8 @@
 package com.dandelion.system.dao;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.dandelion.system.vo.UserVo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,16 +13,20 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("sys_Muted")
-public class Muted implements Serializable {
+@TableName("authentication")
+public class Authentication implements Serializable {
     public static final long serialVersionUID =1L;
+
     @TableId(value = "id",type = IdType.AUTO)
     private Long id;
     private Long userId;
-    private Date mutedTime;
-    private String createBy;
+    private String onlineCode;
+    private String studentCard;
+    private String refuse;
+    private Date expire;
     private Date createTime;
-    private String effective;
-    @TableField(exist = false)
-    private UserVo user;
+    private String updateBy;
+    private Date updateTime;
+
+
 }

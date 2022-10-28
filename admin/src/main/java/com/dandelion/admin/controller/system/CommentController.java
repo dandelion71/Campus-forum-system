@@ -36,7 +36,7 @@ public class CommentController {
     @PreAuthorize("@dandelion.hasAuthority('system:comment:query')")
     @GetMapping("/queryUser/{userName}")
     public ResponseResult queryUser(@RequestParam(defaultValue = "1") Integer currentPage,
-                               @RequestParam(defaultValue = "10") Integer pageSize,
+                               @RequestParam(defaultValue = "5") Integer pageSize,
                                @PathVariable String userName) {
         String userId = userMapper.getIdByUserName(userName);
         Assert.notNull(userId,"用户不存在");
@@ -50,14 +50,14 @@ public class CommentController {
             comment.setUser(userMapper.getUserVoById(comment.getUserId()));
             comment.setTargetUser(userMapper.getUserVoById(comment.getTargetUserId()));
         }
-        return ResponseResult.success(page, Massage.SELECT.value());
+        return ResponseResult.success(page);
     }
 
     @ApiOperation(value = "评论查询",notes = "根据 postId parentId 查询评论以及回复")
     @PreAuthorize("@dandelion.hasAuthority('system:comment:query')")
     @GetMapping("/queryComment/{postId}/{parentId}")
     public ResponseResult queryComment(@RequestParam(defaultValue = "1") Integer currentPage,
-                                       @RequestParam(defaultValue = "10") Integer pageSize,
+                                       @RequestParam(defaultValue = "5") Integer pageSize,
                                        @PathVariable String postId,
                                        @PathVariable String parentId) {
         Page<Comment> commentPage = new Page<>(currentPage, pageSize);
@@ -79,7 +79,7 @@ public class CommentController {
             }
         }
 
-        return ResponseResult.success(page, Massage.SELECT.value());
+        return ResponseResult.success(page);
     }
 
     @ApiOperation(value = "评论修改")

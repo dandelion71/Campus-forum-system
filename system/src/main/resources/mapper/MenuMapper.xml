@@ -20,4 +20,18 @@
             AND su.id =#{id}
         </where>
     </select>
+    <select id="selectAdminPermission" resultType="com.dandelion.system.vo.MenuVo">
+        select id,menu_name,perms
+        from sys_menu
+        <where>
+            parent_id &lt;&gt; 0 ${ew.customSqlSegment}
+        </where>
+    </select>
+    <select id="selectAll" resultType="com.dandelion.system.vo.MenuVo">
+        select id,menu_name,perms
+        from sys_menu
+        <where>
+            parent_id &lt;&gt; 0
+        </where>
+    </select>
 </mapper>

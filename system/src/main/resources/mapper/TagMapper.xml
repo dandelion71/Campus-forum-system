@@ -15,4 +15,9 @@
             id = #{id}
         </where>
     </select>
+    <select id="getSectionTag" resultType="long">
+        select tag_id
+        from section_tag
+        where section_id = #{sectionId}
+    </select>
 </mapper>

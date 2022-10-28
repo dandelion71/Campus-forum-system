@@ -2,14 +2,17 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dandelion.system.mapper.MutedMapper">
 
+
     <select id="getAllByUserName" resultType="com.dandelion.system.dao.Muted">
         select
             sm.*
         from
             sys_user su,
             sys_muted sm
-        where
+        <where>
             su.id = sm.user_id
-          AND su.user_name = #{userName}
+            AND su.user_name = #{userName}
+        </where>
+        ${ew.customSqlSegment}
     </select>
 </mapper>

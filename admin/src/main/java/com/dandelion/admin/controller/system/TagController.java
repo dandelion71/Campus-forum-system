@@ -8,6 +8,7 @@ import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.ResponseResult;
+import com.dandelion.system.dao.Role;
 import com.dandelion.system.dao.Tag;
 import com.dandelion.system.mapper.TagMapper;
 import com.dandelion.system.service.TagService;
@@ -18,6 +19,8 @@ import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/system/tag")
@@ -32,24 +35,43 @@ public class TagController {
     @ApiOperation(value = "分类管理")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:list')")
     @GetMapping("/list")
-    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "10") Integer pageSize) {
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
         Page<Tag> tagPage = new Page<>(currentPage, pageSize);
         IPage<Tag> page = tagService.page(tagPage);
-        return ResponseResult.success(page, Massage.SELECT.value());
+        return ResponseResult.success(page);
+    }
+
+    @ApiOperation(value = "分类查询")
+    @PreAuthorize("@dandelion.hasAuthority('system:tag:query')")
+    @GetMapping("/queryAll")
+    public ResponseResult queryAll(){
+        return ResponseResult.success(tagService.list());
     }
 
     @ApiOperation(value = "分类查询",notes = "根据 ID 查询分类")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:query')")
     @GetMapping("/query/ById/{id}")
     public ResponseResult queryById(@PathVariable String id){
-        return ResponseResult.success(tagService.getById(id),Massage.SELECT.value());
+        Tag tag = tagService.getById(id);
+        Assert.notNull(tag,"未找到该分类");
+        return ResponseResult.success(tag,Massage.SELECT.value());
+    }
+
+    @ApiOperation(value = "分类查询",notes = "根据 sectionId 查询分类")
+    @PreAuthorize("@dandelion.hasAuthority('system:tag:query')")
+    @GetMapping("/query/BySectionId/{sectionId}")
+    public ResponseResult queryBySectionId(@PathVariable String sectionId){
+        List<Long> tagIds = tagMapper.getSectionTag(sectionId);
+        return ResponseResult.success(tagIds,Massage.SELECT.value());
     }
 
     @ApiOperation(value = "分类查询",notes = "根据 tagName 查询分类")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:query')")
     @GetMapping("/query/ByTagName/{tagName}")
     public ResponseResult queryByTagName(@PathVariable String tagName){
-        return ResponseResult.success(tagService.getOne(new LambdaQueryWrapper<Tag>().eq(Tag::getTagName,tagName)),Massage.SELECT.value());
+        Tag tag = tagService.getOne(new LambdaQueryWrapper<Tag>().eq(Tag::getTagName, tagName));
+        Assert.notNull(tag,"未找到该分类");
+        return ResponseResult.success(tag,Massage.SELECT.value());
     }
 
     @ApiOperation(value = "分类添加")
@@ -57,6 +79,9 @@ public class TagController {
     @PreAuthorize("@dandelion.hasAuthority('system:tag:add')")
     @PostMapping("/add")
     public ResponseResult add(@RequestBody Tag tag){
+        if(Objects.nonNull(tag.getTagName())){
+            Assert.isNull(tagService.getOne(new LambdaQueryWrapper<Tag>().eq(Tag::getTagName, tag.getTagName())), "分类名已存在");
+        }
         tag.setCreateBy(SecurityUtils.getUsername());
         tag.setCreateTime(new Date());
         tagService.save(tag);
@@ -68,6 +93,9 @@ public class TagController {
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:edit')")
     public ResponseResult edit(@RequestBody Tag tag){
+        if(Objects.nonNull(tag.getTagName())) {
+            Assert.isNull(tagService.getOne(new LambdaQueryWrapper<Tag>().eq(Tag::getTagName, tag.getTagName())), "分类名已存在");
+        }
         tag.setUpdateBy(SecurityUtils.getUsername());
         tag.setUpdateTime(new Date());
         tagService.updateById(tag);
@@ -76,14 +104,14 @@ public class TagController {
 
     @ApiOperation(value = "分类删除",notes = "根据 tagId 删除分类")
     @Log(title = "分类管理", businessType = BusinessType.DELETE)
-    @PostMapping("/remove/{oldTagId}/{newTagId}")
+    @PostMapping("/remove/{tagId}")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:remove')")
-    public ResponseResult remove(@PathVariable String oldTagId, @PathVariable String newTagId){
-        Tag tag = tagService.getOne(new LambdaQueryWrapper<Tag>().eq(Tag::getId, oldTagId).ne(Tag::getIsDel, "1"));
+    public ResponseResult remove(@PathVariable String tagId){
+        Tag tag = tagService.getOne(new LambdaQueryWrapper<Tag>().eq(Tag::getId, tagId).ne(Tag::getIsDel, "1"));
         Assert.notNull(tag,"该分类不可删除");
-        tagMapper.deleteSectionTagByTagId(oldTagId);
-        tagMapper.updatePostsTagId(oldTagId,newTagId);
-        tagService.removeById(oldTagId);
+        tagMapper.deleteSectionTagByTagId(tagId);
+        tagMapper.updatePostsTagId(tagId,"2");
+        tagService.removeById(tagId);
         return ResponseResult.success(Massage.DELETE.value());
     }
 }
