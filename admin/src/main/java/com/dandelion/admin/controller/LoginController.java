@@ -58,12 +58,11 @@ public class LoginController {
         }
         LoginUser loginUser = (LoginUser) authenticate.getPrincipal();
         String jwt = JwtUtil.createJWT(loginUser.getUuid());
-        Map<String, String> map = new HashMap<>();
+        Map<Object, Object> map = new HashMap<>();
         Long id = loginUser.getUser().getId();
         map.put("token", jwt);
-        map.put("role",userMapper.getRoleKey(id));
-        map.put("id",String.valueOf(id));
-        map.put("username", loginUser.getUsername());
+        map.put("roleKey", loginUser.getRoleKey());
+        map.put("user",loginUser.getUser());
         redisCache.setCacheObject(loginUser.getUuid(), loginUser);
         userService.update(new LambdaUpdateWrapper<User>()
                 .eq(User::getUserName, loginBody.getUserName())

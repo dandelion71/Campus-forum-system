@@ -1,10 +1,14 @@
 package com.dandelion.system.mapper;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Constants;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.system.dao.User;
-import com.dandelion.system.vo.RoleVo;
-import com.dandelion.system.vo.UserVo;
+import com.dandelion.system.vo.*;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -25,4 +29,12 @@ public interface UserMapper extends BaseMapper<User> {
     List<UserVo> getUsersByQueryString(String queryString);
 
     void setRole(Long userId,Long roleId);
+
+    PostUserVo getPostUserById(String userId);
+
+    List<PostsSimpleVo> selectUserPost(String userId);
+
+    Long selectUserCollectionPost(String userId);
+
+    IPage<UserDynamic> selectUserDynamic(Page<UserDynamic> page, String userId);
 }

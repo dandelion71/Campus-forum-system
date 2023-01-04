@@ -1,6 +1,7 @@
 package com.dandelion.system.dao;
 
 import com.alibaba.fastjson.annotation.JSONField;
+import com.dandelion.system.vo.UserVo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,9 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class LoginUser implements UserDetails {
 
-    private User user;
+    private UserVo user;
+
+    private String password;
 
     private String uuid;
 
@@ -28,8 +31,10 @@ public class LoginUser implements UserDetails {
     @JSONField(serialize = false)
     private List<SimpleGrantedAuthority> authorities;
 
-    public LoginUser(User user, String uuid,String roleKey, List<String> permissions) {
-        this.user=user;
+    public LoginUser(UserVo userVo, String uuid, String roleKey, String password, List<String> permissions) {
+        this.user=userVo;
+        this.roleKey = roleKey;
+        this.password = password;
         this.uuid=uuid;
         this.permissions=permissions;
     }
@@ -45,7 +50,7 @@ public class LoginUser implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return password;
     }
 
     @Override

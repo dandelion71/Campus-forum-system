@@ -39,9 +39,24 @@ public class UploadController {
         return ResponseResult.success(url,null);
     }
 
+    @PostMapping("/authentication")
+    public ResponseResult uploadAuthentication(MultipartFile file, HttpServletRequest req) throws IOException {
+        String format = "/authentication/";
+        String url = uploadImage(file, req, format);
+        return ResponseResult.success(url,null);
+    }
+
+
     @PostMapping("/section")
     public ResponseResult uploadSectionImg(MultipartFile file, HttpServletRequest req) throws IOException {
         String format = "/section/";
+        String url = uploadImage(file, req, format);
+        return ResponseResult.success(url,null);
+    }
+
+    @PostMapping("/post")
+    public ResponseResult uploadPostImg(MultipartFile file, HttpServletRequest req) throws IOException {
+        String format = "/post/";
         String url = uploadImage(file, req, format);
         return ResponseResult.success(url,null);
     }

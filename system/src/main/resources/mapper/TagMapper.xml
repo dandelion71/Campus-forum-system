@@ -20,4 +20,9 @@
         from section_tag
         where section_id = #{sectionId}
     </select>
+    <select id="getSectionVo" resultType="com.dandelion.system.vo.TagVo">
+        select t.id,t.tag_name
+        FROM tag t,section_tag st,section s
+        WHERE t.id = st.tag_id and st.section_id = s.id and section_id=#{sectionId}
+    </select>
 </mapper>

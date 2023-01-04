@@ -34,63 +34,27 @@ public class CommentController {
 
     @ApiOperation(value = "评论查询",notes = "根据 用户名 查询评论以及回复")
     @PreAuthorize("@dandelion.hasAuthority('system:comment:query')")
-    @GetMapping("/queryUser/{userName}")
+    @GetMapping("/list")
     public ResponseResult queryUser(@RequestParam(defaultValue = "1") Integer currentPage,
-                               @RequestParam(defaultValue = "5") Integer pageSize,
-                               @PathVariable String userName) {
-        String userId = userMapper.getIdByUserName(userName);
-        Assert.notNull(userId,"用户不存在");
+                                    @RequestParam(defaultValue = "5") Integer pageSize,
+                                    @RequestParam(defaultValue = "0") String key,
+                                    @RequestParam(defaultValue = "0") String value) {
+        LambdaQueryWrapper<Comment> queryWrapper = new LambdaQueryWrapper<>();
+        switch (key){
+            case "0":break;
+            case "1":queryWrapper.eq(Comment::getUserId,value);break;
+            case "2":queryWrapper.eq(Comment::getTargetUserId,value);break;
+            case "3":queryWrapper.like(Comment::getContent,value);break;
+            case "4":queryWrapper.eq(Comment::getPostId,value);break;
+        }
         Page<Comment> commentPage = new Page<>(currentPage, pageSize);
-        IPage<Comment> page = commentService.page(commentPage,new LambdaQueryWrapper<Comment>()
-                .eq(Comment::getUserId,userId)
-                .ne(Comment::getDelFlag,2)
-                .orderByDesc(Comment::getCreateTime));
+        IPage<Comment> page = commentService.page(commentPage,queryWrapper.orderByDesc(Comment::getCreateTime));
         List<Comment> comments = page.getRecords();
         for (Comment comment : comments) {
             comment.setUser(userMapper.getUserVoById(comment.getUserId()));
             comment.setTargetUser(userMapper.getUserVoById(comment.getTargetUserId()));
         }
         return ResponseResult.success(page);
-    }
-
-    @ApiOperation(value = "评论查询",notes = "根据 postId parentId 查询评论以及回复")
-    @PreAuthorize("@dandelion.hasAuthority('system:comment:query')")
-    @GetMapping("/queryComment/{postId}/{parentId}")
-    public ResponseResult queryComment(@RequestParam(defaultValue = "1") Integer currentPage,
-                                       @RequestParam(defaultValue = "5") Integer pageSize,
-                                       @PathVariable String postId,
-                                       @PathVariable String parentId) {
-        Page<Comment> commentPage = new Page<>(currentPage, pageSize);
-        IPage<Comment> page = commentService.page(commentPage,new LambdaQueryWrapper<Comment>()
-                .eq(Comment::getPostId,postId)
-                .eq(Comment::getParentId,parentId)
-                .ne(Comment::getDelFlag,2)
-                .orderByDesc(Comment::getCreateTime));
-        List<Comment> comments = page.getRecords();
-        for (Comment comment : comments) {
-            comment.setUser(userMapper.getUserVoById(comment.getUserId()));
-            if (!"0".equals(parentId)){
-                List<Comment> commentList = commentService.list(new LambdaQueryWrapper<Comment>().eq(Comment::getParentId, comment.getId()));
-                for (Comment c : commentList) {
-                    c.setUser(userMapper.getUserVoById(c.getUserId()));
-                    c.setTargetUser(userMapper.getUserVoById(c.getTargetUserId()));
-                }
-                comment.setCommentList(commentList);
-            }
-        }
-
-        return ResponseResult.success(page);
-    }
-
-    @ApiOperation(value = "评论修改")
-    @Log(title = "评论管理",businessType = BusinessType.UPDATE)
-    @PostMapping("/edit")
-    @PreAuthorize("@dandelion.hasAuthority('system:comment:edit')")
-    public ResponseResult edit(@RequestBody Comment comment){
-        comment.setUpdateBy(SecurityUtils.getUsername());
-        comment.setUpdateTime(new Date());
-        commentService.updateById(comment);
-        return ResponseResult.success(Massage.UPDATE.value());
     }
 
     @ApiOperation(value = "评论删除")

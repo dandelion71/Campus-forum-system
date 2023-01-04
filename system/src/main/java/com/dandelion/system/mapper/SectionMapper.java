@@ -1,11 +1,15 @@
 package com.dandelion.system.mapper;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.dandelion.system.dao.Section;
 import com.dandelion.system.dao.Tag;
+import com.dandelion.system.vo.SectionMasterVo;
 import com.dandelion.system.vo.SectionVo;
 import com.dandelion.system.vo.UserVo;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -20,7 +24,7 @@ public interface SectionMapper extends BaseMapper<Section> {
 
     void delSectionTag(String sectionId,String tagId);
 
-    SectionVo getSectionVoById(Long id);
+    SectionMasterVo getSectionVoById(Long id);
 
     List<UserVo> getSectionModerator(String id);
 
@@ -28,5 +32,11 @@ public interface SectionMapper extends BaseMapper<Section> {
 
     List<Tag> selectNoneTagBySectionId(String sectionId);
 
-    List<SectionVo> selectTopSection();
+    List<SectionMasterVo> selectTopSection();
+
+    List<SectionMasterVo> selectSection(@Param(Constants.WRAPPER) Wrapper<SectionMasterVo> queryWrapper);
+
+    SectionVo selectSectionById(String sectionId);
+
+    String getSectionUser(Long userId,String sectionId);
 }

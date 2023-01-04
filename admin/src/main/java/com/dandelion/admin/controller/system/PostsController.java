@@ -1,6 +1,7 @@
 package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -46,17 +47,21 @@ public class PostsController {
 
     @ApiOperation(value = "帖子管理")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:list')")
-    @GetMapping("/list/{sectionId}")
+    @GetMapping("/list")
     public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,
                                @RequestParam(defaultValue = "5") Integer pageSize,
-                               @PathVariable String sectionId) {
+                               @RequestParam(defaultValue = "0") String key,
+                               @RequestParam(defaultValue = "0") String value) {
+        LambdaQueryWrapper<Posts> queryWrapper = new LambdaQueryWrapper<>();
+        switch (key){
+            case "0":break;
+            case "1":queryWrapper.eq(Posts::getUserId,value);break;
+            case "2":queryWrapper.eq(Posts::getSectionId,value);break;
+            case "3":queryWrapper.like(Posts::getTitle,value);break;
+            case "4":queryWrapper.eq(Posts::getId,value);break;
+        }
         Page<Posts> postsPage = new Page<>(currentPage, pageSize);
-        IPage<Posts> page = postsService.page(postsPage, new LambdaQueryWrapper<Posts>()
-                .eq(Posts::getSectionId,sectionId)
-                .or().eq(Posts::getSectionId,0)
-                .ne(Posts::getDelFlag, 2)
-                .orderByDesc(Posts::getTop)
-                .orderByDesc(Posts::getCreateTime));
+        IPage<Posts> page = postsService.page(postsPage, queryWrapper.orderByDesc(Posts::getCreateTime));
         List<Posts> records = page.getRecords();
         for (Posts post : records) {
             post.setUser(userMapper.getUserVoById(post.getUserId()));
@@ -66,27 +71,37 @@ public class PostsController {
         return ResponseResult.success(page);
     }
 
-    @ApiOperation(value = "帖子添加")
-    @Log(title = "帖子管理",businessType = BusinessType.INSERT)
-    @PostMapping("/add")
-    @PreAuthorize("@dandelion.hasAuthority('system:posts:add')")
-    public ResponseResult add(@RequestBody Posts posts){
-        posts.setUserId(SecurityUtils.getUserId());
-        posts.setCreateTime(new Date());
-        postsService.save(posts);
-        return ResponseResult.success(Massage.SAVE.value());
-    }
+//    @ApiOperation(value = "帖子添加")
+//    @Log(title = "帖子管理",businessType = BusinessType.INSERT)
+//    @PostMapping("/add")
+//    @PreAuthorize("@dandelion.hasAuthority('system:posts:add')")
+//    public ResponseResult add(@RequestBody Posts posts){
+//        posts.setUserId(SecurityUtils.getUserId());
+//        posts.setCreateTime(new Date());
+//        postsService.save(posts);
+//        return ResponseResult.success(Massage.SAVE.value());
+//    }
 
-    @ApiOperation(value = "帖子修改")
+//    @ApiOperation(value = "帖子修改")
+//    @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
+//    @PostMapping("/edit")
+//    @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
+//    public ResponseResult edit(@RequestBody Posts posts){
+//        posts.setUpdateBy(SecurityUtils.getUsername());
+//        posts.setUpdateTime(new Date());
+//        postsService.updateById(posts);
+//        return ResponseResult.success(Massage.UPDATE.value());
+//    }
+
+    @ApiOperation(value = "帖子修改",notes = "根据 ID 设置是否关闭")
     @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
-    @PostMapping("/edit")
+    @PostMapping("/editStatus/{id}/{top}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
-    public ResponseResult edit(@RequestBody Posts posts){
-        posts.setUpdateBy(SecurityUtils.getUsername());
-        posts.setUpdateTime(new Date());
-        postsService.updateById(posts);
+    public ResponseResult editStatus(@PathVariable String id, @PathVariable String top){
+        postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,id).set(Posts::getStatus,top));
         return ResponseResult.success(Massage.UPDATE.value());
     }
+
     @ApiOperation(value = "帖子修改",notes = "根据 ID 设置是否置顶")
     @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
     @PostMapping("/editTop/{id}/{top}")
@@ -110,10 +125,8 @@ public class PostsController {
     @PostMapping("/remove/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:remove')")
     public ResponseResult remove(@PathVariable String id){
-        commentService.update(new LambdaUpdateWrapper<Comment>().eq(Comment::getPostId,id).set(Comment::getDelFlag,2));
+//        commentService.update(new LambdaUpdateWrapper<Comment>().eq(Comment::getPostId,id).set(Comment::getDelFlag,2));
         postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,id).set(Posts::getDelFlag,2));
         return ResponseResult.success(Massage.DELETE.value());
     }
-
-
 }

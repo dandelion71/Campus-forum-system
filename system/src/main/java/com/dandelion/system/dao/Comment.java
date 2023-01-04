@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.dandelion.system.vo.UserVo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,11 +33,20 @@ public class Comment implements Serializable {
     private String updateBy;
     private Date updateTime;
     private Date createTime;
+    private String updateCause;
 
     @TableField(select = false)
     private UserVo user;
     @TableField(select = false)
     private UserVo targetUser;
     @TableField(select = false)
-    private List<Comment> commentList;
+    private IPage<Comment> childrenCommentPage;
+    @TableField(select = false)
+    private List<Comment> childrenCommentList;
+    @TableField(select = false)
+    private Integer level;
+    @TableField(select = false)
+    private Boolean isUserLike;
+    @TableField(select = false)
+    private Boolean isEdit;
 }

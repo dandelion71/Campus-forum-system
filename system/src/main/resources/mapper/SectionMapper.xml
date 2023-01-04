@@ -34,24 +34,43 @@
             )
         </where>
     </select>
-    <select id="getSectionVoById" resultType="com.dandelion.system.vo.SectionVo">
+    <select id="getSectionVoById" resultType="com.dandelion.system.vo.SectionMasterVo">
         select id,section_name
         from section
         <where>
             id = #{id}
         </where>
     </select>
-    <select id="selectTopSection" resultType="com.dandelion.system.vo.SectionVo">
-        select s.id,s.section_name,count(1) num
-        from section s,posts p
-        WHERE s.id = p.section_id
-        GROUP BY s.id
-        ORDER BY num DESC
-        LIMIT 0,5
+    <select id="selectTopSection" resultType="com.dandelion.system.vo.SectionMasterVo">
+        SELECT s.id,section_name
+        FROM section s
+        LEFT JOIN posts p
+        ON s.id = p.section_id
+        WHERE s.status &lt;&gt; 1 and parent_id &lt;&gt; 0
+        GROUP BY id
+        ORDER BY sum(see_num) DESC
+        LIMIT 5
     </select>
     <select id="getSectionModerator" resultType="com.dandelion.system.vo.UserVo">
         SELECT su.id,su.user_name,su.avatar
         FROM section s,user_section us,sys_user su
         WHERE s.id = us.section_id and us.user_id = su.id and s.id = #{sectionId}
+    </select>
+    <select id="selectSection" resultType="com.dandelion.system.vo.SectionMasterVo">
+        select id,section_name,title,icon,status
+        from section
+        ${ew.customSqlSegment}
+    </select>
+    <select id="selectSectionById" resultType="com.dandelion.system.vo.SectionVo">
+        select id,section_name,title,notice,icon
+        from section
+        <where>
+            id = #{sectionId}
+        </where>
+    </select>
+    <select id="getSectionUser" resultType="java.lang.String">
+        SELECT user_id
+        FROM user_section
+        WHERE user_id = #{userId} and section_id = #{sectionId}
     </select>
 </mapper>

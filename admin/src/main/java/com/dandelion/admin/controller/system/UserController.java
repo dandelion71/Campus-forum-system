@@ -81,31 +81,13 @@ public class UserController {
         return ResponseResult.success(userMapper.getUsersByQueryString(queryString),Massage.SELECT.value());
     }
 
-//    @ApiOperation(value = "查询用户名是否存在", notes = "根据 username 查询用户")
-//    @GetMapping("/query/getUserNameExists/{username}")
-//    @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
-//    public ResponseResult getUserNameExists(@PathVariable String username) {
-//        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, username));
-//        Assert.isNull(user, "登录名已存在");
-//        return ResponseResult.success("登录名可以使用");
-//    }
-
-//    @ApiOperation(value = "查询用户头像", notes = "根据 username 查询用户头像")
-    @GetMapping("/query/getAvatar/{username}")
-    @PreAuthorize("@dandelion.hasAuthority('system:user:query')")
-    public ResponseResult getAvatar(@PathVariable String username) {
-        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, username));
-        Assert.notNull(user, "用户不存在");
-        return ResponseResult.success(user.getAvatar(),Massage.SELECT.value());
-    }
-
 //    @ApiOperation(value = "用户信息编辑")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:user:edit')")
     public ResponseResult edit(@RequestBody User user) {
         if(Objects.nonNull(user.getUserName())){
-            Assert.isNull(userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, user.getUserName())), "登录名已存在");
+            Assert.isNull(userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, user.getUserName())), "用户名已存在");
         }
         if(Objects.nonNull(user.getPhonenumber())){
             Assert.isNull(userService.getOne(new LambdaQueryWrapper<User>().eq(User::getPhonenumber, user.getPhonenumber())), "手机号已绑定其他用户");

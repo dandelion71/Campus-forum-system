@@ -1,5 +1,141 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dandelion.system.mapper.PostsMapper">
+    <insert id="insertLikes">
+        insert into likes_posts(user_id, posts_id) values(#{userId},#{postId})
+    </insert>
+    <insert id="insertCollection">
+        insert into collection(user_id, posts_id) values(#{userId},#{postId})
+    </insert>
+    <update id="updateLikes">
+        update likes_posts set is_like = #{isLike} where user_id=#{userId} and posts_id = #{postId}
+    </update>
+    <update id="updateCollection">
+        update collection set is_collection = #{isCollection} where user_id=#{userId} and posts_id = #{postId}
+    </update>
 
+    <select id="selectTodayPostNums" resultType="java.lang.Long">
+        SELECT count(1)
+        from posts
+        WHERE to_days(create_time) = to_days(now()) and section_id = #{sectionId} and del_flag = 0
+    </select>
+    <select id="selectNewPost" resultType="com.dandelion.system.vo.PostsSimpleVo">
+        select id,section_id,title,create_time
+        from posts
+        where del_flag = 0
+        order by create_time desc
+        limit 5
+    </select>
+    <select id="selectNewElitePost" resultType="com.dandelion.system.vo.PostsSimpleVo">
+        select id,section_id,title,create_time
+        from posts
+        where elite &lt;&gt; 0 and del_flag = 0
+        order by create_time desc
+        limit 5
+    </select>
+    <select id="selectNewPostComment" resultType="com.dandelion.system.vo.PostsSimpleVo">
+        select distinct p.id,p.section_id,title,p.create_time
+        from posts p,comment c
+        where p.id=c.post_id and c.parent_id = 0 and p.del_flag = 0
+        order by create_time desc
+        limit 5
+    </select>
+    <select id="selectHotPost" resultType="com.dandelion.system.vo.PostsSimpleVo">
+        select id,section_id,title,create_time,see_num*1+likes_num*2+collection_num*3 as hot
+        from posts
+        where section_id = #{sectionId} and del_flag = 0
+        ORDER BY hot desc
+        limit 5
+    </select>
+    <select id="selectDefaultPost" resultType="com.dandelion.system.vo.PostsVo">
+        select p.*,max(c.create_time) commentCreateTime,count(c.id) commentNum
+        FROM posts p left JOIN `comment` c on p.id = c.post_id
+         where
+            section_id = #{sectionId} and p.del_flag = 0
+            <if test="tagId!=0">
+                and tag_id = #{tagId}
+            </if>
+            <if test="tagId==0">
+                or top=2
+            </if>
+             and p.del_flag = 0
+            GROUP BY p.id
+            ORDER BY
+                    case when top = 2 then 0 else 1 end,
+                    case when top = 1 then 0 else 1 end,
+                    commentCreateTime desc
+    </select>
+    <select id="selectPostByTabs" resultType="com.dandelion.system.vo.PostsVo">
+        select p.*,count(c.id) commentNum
+        FROM posts p left JOIN `comment` c on p.id = c.post_id
+        <where>
+            p.section_id = #{sectionId} and p.del_flag = 0
+            <if test="tagId!=0">
+                and p.tag_id = #{tagId}
+            </if>
+        </where>
+        GROUP BY p.id
+            ${ew.customSqlSegment}
+    </select>
+    <select id="selectLikes" resultType="com.dandelion.system.vo.LikesVo">
+        select *
+        from likes_posts
+        where user_id=#{userId} and posts_id=#{postId}
+    </select>
+    <select id="selectLikesNum" resultType="java.lang.Long">
+        SELECT count(*)
+        FROM likes_posts
+        WHERE posts_id=#{postId} and is_like = 1
+    </select>
+    <select id="selectCollection" resultType="com.dandelion.system.vo.CollectionVo">
+        select *
+        from collection
+        where user_id=#{userId} and posts_id=#{postId}
+    </select>
+    <select id="selectCollectionNum" resultType="java.lang.Long">
+        SELECT count(*)
+        FROM collection
+        WHERE posts_id=#{postId} and is_collection = 1
+    </select>
+    <select id="selectPostUpdateVo" resultType="com.dandelion.system.vo.PostsUpdateVo">
+        select id,title,tag_id,content
+        from posts
+        where id=#{postId}
+    </select>
+    <select id="selectPostsSimpleVo" resultType="com.dandelion.system.vo.PostsSimpleVo">
+        select id,section_id,title,create_time
+        from posts
+        where id=#{postId}
+    </select>
+    <select id="selectAllPostByUser" resultType="com.dandelion.system.vo.PostsVo">
+        select p.*,count(c.id) commentNum
+        FROM posts p left JOIN `comment` c on p.id = c.post_id
+        <where>
+            p.user_id = #{userId} and p.del_flag = 0
+        </where>
+        GROUP BY p.id
+        ${ew.customSqlSegment}
+    </select>
+    <select id="selectElitePostByUser" resultType="com.dandelion.system.vo.PostsVo">
+        select p.*,count(c.id) commentNum
+        FROM posts p left JOIN `comment` c on p.id = c.post_id
+        <where>
+            p.user_id = #{userId} and p.elite &lt;&gt; 0 and p.del_flag = 0
+        </where>
+        GROUP BY p.id
+        ${ew.customSqlSegment}
+    </select>
+    <select id="selectPostByUserCollection" resultType="com.dandelion.system.vo.PostsVo">
+        select p.*,count(c.id) commentNum
+        FROM posts p left JOIN `comment` c on p.id = c.post_id
+        <where>
+            p.id in (
+                select posts_id
+                from collection
+                where user_id=#{userId}
+            ) and p.del_flag = 0
+        </where>
+        GROUP BY p.id
+        ${ew.customSqlSegment}
+    </select>
 </mapper>

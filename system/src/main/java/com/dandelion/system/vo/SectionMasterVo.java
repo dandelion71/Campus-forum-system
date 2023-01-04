@@ -11,15 +11,17 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SectionVo implements Serializable {
+public class SectionMasterVo implements Serializable {
     public static final long serialVersionUID =1L;
 
     private Long id;
     private String sectionName;
-    private String notice;
     private String title;
     private String icon;
+    private String status;
 
+    @TableField(select = false)
+    private List<SectionMasterVo> children;
     @TableField(select = false)
     private Long allPostNum;
     @TableField(select = false)

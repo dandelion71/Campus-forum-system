@@ -6,6 +6,7 @@ import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.MenuMapper;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.UserService;
+import com.dandelion.system.vo.UserVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -37,6 +38,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if ("2".equals(user.getMuted())){
             throw new RuntimeException("该用户已被永久封禁");
         }
-        return new LoginUser(user,UUID.randomUUID().toString(),userMapper.getRoleKey(user.getId()),menuMapper.selectPermsById(user.getId()));
+        UserVo userVo = new UserVo();
+        userVo.setId(user.getId());
+        userVo.setUserName(user.getUserName());
+        userVo.setAvatar(user.getAvatar());
+        userVo.setMuted(user.getMuted());
+        userVo.setStatus(user.getStatus());
+        return new LoginUser(userVo,UUID.randomUUID().toString(),userMapper.getRoleKey(user.getId()), user.getPassword(), menuMapper.selectPermsById(user.getId()));
     }
 }

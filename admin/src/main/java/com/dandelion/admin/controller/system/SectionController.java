@@ -1,6 +1,7 @@
 package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -14,6 +15,7 @@ import com.dandelion.system.mapper.SectionMapper;
 import com.dandelion.system.service.PostsService;
 import com.dandelion.system.service.SectionService;
 import com.dandelion.system.service.UserService;
+import com.dandelion.system.vo.SectionMasterVo;
 import com.dandelion.system.vo.UserVo;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,21 +50,17 @@ public class SectionController {
         return ResponseResult.success(sectionService.list(new LambdaQueryWrapper<Section>().eq(Section::getParentId, 0).orderByAsc(Section::getOrderNum)));
     }
 
-//    @ApiOperation(value = "分区查询",notes = "查询分区以及分区下的版块")
+    @ApiOperation(value = "分区查询",notes = "查询分区以及分区下的版块")
     @PreAuthorize("@dandelion.hasAuthority('system:section:query')")
     @GetMapping("/query")
     public ResponseResult query(){
-        List<Section> sectionList = sectionService.list(
-                new LambdaQueryWrapper<Section>()
-                        .eq(Section::getParentId, 0)
-                        .ne(Section::getStatus,1));
-        for (Section section : sectionList) {
-            section.setSection(sectionService.list(
-                    new LambdaQueryWrapper<Section>()
-                            .eq(Section::getParentId,section.getId())
-                            .ne(Section::getStatus,1)));
+        List<SectionMasterVo> sectionMasterVos = sectionMapper.selectSection(
+                new QueryWrapper<SectionMasterVo>().eq("parent_id","0"));
+        for (SectionMasterVo sectionMasterVo : sectionMasterVos) {
+            sectionMasterVo.setChildren(sectionMapper.selectSection(
+                    new QueryWrapper<SectionMasterVo>().eq("parent_id", sectionMasterVo.getId())));
         }
-        return ResponseResult.success(sectionList,Massage.SELECT.value());
+        return ResponseResult.success(sectionMasterVos, Massage.SELECT.value());
     }
 
 
@@ -165,6 +163,8 @@ public class SectionController {
         sectionService.updateById(section);
         return ResponseResult.success(Massage.UPDATE.value());
     }
+
+
 
 
 //    @ApiOperation(value = "分区（版块）修改",notes = "根据 id 停用版块")

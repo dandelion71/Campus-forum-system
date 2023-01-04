@@ -7,16 +7,20 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
+import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.Authentication;
 import com.dandelion.system.dao.Comment;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.User;
+import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.AuthenticationService;
 import com.dandelion.system.service.UserService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
 
 @RestController
 @RequestMapping("/system/authentication")
@@ -28,47 +32,42 @@ public class AuthenticationController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserMapper userMapper;
+
     @ApiOperation(value = "认证申请管理")
     @PreAuthorize("@dandelion.hasAuthority('system:authentication:list')")
-    @GetMapping("/listNonePass")
+    @GetMapping("/list")
     public ResponseResult listNonePass(@RequestParam(defaultValue = "1") Integer currentPage,
-                                    @RequestParam(defaultValue = "5") Integer pageSize) {
-        Page<Authentication> commentPage = new Page<>(currentPage, pageSize);
-        IPage<Authentication> page = authenticationService.page(commentPage,
-                new LambdaQueryWrapper<Authentication>()
-                        .isNull(Authentication::getExpire));
+                                       @RequestParam(defaultValue = "5") Integer pageSize,
+                                       @RequestParam(defaultValue = "0") String key,
+                                       @RequestParam(defaultValue = "0") String value) {
+        LambdaQueryWrapper<Authentication> queryWrapper = new LambdaQueryWrapper<>();
+        switch (key){
+            case "0":break;
+            case "1":queryWrapper.eq(Authentication::getPass,1);break;
+            case "2":queryWrapper.le(Authentication::getExpire,new Date());break;
+            case "3":queryWrapper.eq(Authentication::getUserId,value);break;
+        }
+        Page<Authentication> authenticationPage = new Page<>(currentPage, pageSize);
+        IPage<Authentication> page = authenticationService.page(authenticationPage,queryWrapper.orderByDesc(Authentication::getCreateTime));
+        for (Authentication authentication : page.getRecords()) {
+            authentication.setUser(userMapper.getUserVoById(authentication.getUserId()));
+        }
         return ResponseResult.success(page);
     }
 
-    @ApiOperation(value = "已认证管理")
-    @PreAuthorize("@dandelion.hasAuthority('system:authentication:list')")
-    @GetMapping("/listPass")
-    public ResponseResult listPass(@RequestParam(defaultValue = "1") Integer currentPage,
-                                    @RequestParam(defaultValue = "5") Integer pageSize) {
-        Page<Authentication> commentPage = new Page<>(currentPage, pageSize);
-        IPage<Authentication> page = authenticationService.page(commentPage,
-                new LambdaQueryWrapper<Authentication>()
-                        .isNotNull(Authentication::getExpire));
-        return ResponseResult.success(page);
-    }
-
-    @ApiOperation(value = "认证修改",notes = "认证申请通过")
+    @ApiOperation(value = "认证修改",notes = "认证申请")
     @Log(title = "认证管理",businessType = BusinessType.UPDATE)
-    @PostMapping("/editPass")
+    @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:authentication:edit')")
     public ResponseResult editPass(@RequestBody Authentication authentication){
-        userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,authentication.getUserId()).set(User::getStatus,1));
+        authentication.setUpdateBy(SecurityUtils.getUsername());
+        authentication.setUpdateTime(new Date());
+        userService.update(new LambdaUpdateWrapper<User>()
+                        .eq(User::getId,authentication.getUserId())
+                        .set(User::getStatus,!authentication.getPass().equals("0") ? 0:1 ));
         authenticationService.updateById(authentication);
-        return ResponseResult.success("认证成功");
+        return ResponseResult.success("");
     }
-
-    @ApiOperation(value = "认证修改",notes = "认证申请不通过")
-    @Log(title = "认证管理",businessType = BusinessType.UPDATE)
-    @PostMapping("/editNonePass")
-    @PreAuthorize("@dandelion.hasAuthority('system:authentication:edit')")
-    public ResponseResult editNonePass(@RequestBody Authentication authentication){
-        authenticationService.updateById(authentication);
-        return ResponseResult.success("拒绝成功");
-    }
-
 }

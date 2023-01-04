@@ -1,29 +1,23 @@
 package com.dandelion.system.vo;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SectionVo implements Serializable {
+public class PostsUpdateVo implements Serializable {
     public static final long serialVersionUID =1L;
-
+    @TableId(value = "id",type = IdType.AUTO)
     private Long id;
-    private String sectionName;
-    private String notice;
     private String title;
-    private String icon;
-
-    @TableField(select = false)
-    private Long allPostNum;
-    @TableField(select = false)
-    private Long todayPostNum;
-    @TableField(select = false)
-    private Long todayPostComment;
+    private Long tagId;
+    private String content;
 }

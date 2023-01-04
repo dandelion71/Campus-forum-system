@@ -13,6 +13,8 @@ public interface TagMapper extends BaseMapper<Tag> {
 
     List<Long> getSectionTag(String sectionId);
 
+    List<TagVo> getSectionVo(String sectionId);
+
     void deleteSectionTagByTagId(String tagId);
 
     void updatePostsTagId(String oldTagId,String newTagId);
