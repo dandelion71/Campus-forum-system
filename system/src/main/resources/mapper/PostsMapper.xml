@@ -138,4 +138,13 @@
         GROUP BY p.id
         ${ew.customSqlSegment}
     </select>
+    <select id="selectPostByKeyword" resultType="com.dandelion.system.vo.PostsVo">
+        select p.*,count(c.id) commentNum
+        FROM posts p left JOIN `comment` c on p.id = c.post_id
+        <where>
+            p.title like CONCAT('%',#{keyword},'%') and p.del_flag = 0
+        </where>
+        GROUP BY p.id
+        ${ew.customSqlSegment}
+    </select>
 </mapper>

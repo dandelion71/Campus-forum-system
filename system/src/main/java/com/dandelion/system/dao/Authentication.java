@@ -33,4 +33,6 @@ public class Authentication implements Serializable {
 
     @TableField(select = false)
     private UserVo user;
+    @TableField(select = false)
+    private String status;
 }

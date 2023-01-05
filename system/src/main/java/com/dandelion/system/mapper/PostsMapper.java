@@ -26,6 +26,8 @@ public interface PostsMapper extends BaseMapper<Posts> {
                                     @Param(Constants.WRAPPER) Wrapper<PostsVo> queryWrapper,
                                     @Param("sectionId") String sectionId,
                                     @Param("tagId") String tagId);
+    IPage<PostsVo> selectPostByKeyword(Page<PostsVo> page,
+                                       @Param(Constants.WRAPPER) Wrapper<PostsVo> queryWrapper,String keyword);
 
     IPage<PostsVo> selectAllPostByUser(Page<PostsVo> page,
                                     @Param(Constants.WRAPPER) Wrapper<PostsVo> queryWrapper,String userId);

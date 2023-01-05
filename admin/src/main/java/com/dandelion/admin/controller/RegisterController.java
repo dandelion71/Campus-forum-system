@@ -5,6 +5,7 @@ import com.dandelion.common.annotation.Log;
 import com.dandelion.common.config.SecurityConfig;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
+import com.dandelion.common.utils.RedisCache;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.UserMapper;
@@ -28,6 +29,9 @@ public class RegisterController {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private RedisCache redisCache;
+
     @ApiOperation(value = "用户注册")
     @PostMapping("/user/register")
     public ResponseResult register(@RequestBody User user) {
@@ -41,6 +45,7 @@ public class RegisterController {
         user.setPassword(new SecurityConfig().passwordEncoder().encode(user.getPassword()));
         userService.save(user);
         userMapper.setRole(user.getId(),3L);
+        redisCache.deleteObject("topNums");
         return ResponseResult.success("注册成功");
     }
 }

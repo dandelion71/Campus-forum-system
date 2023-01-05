@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
+import com.dandelion.common.utils.RedisCache;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.common.utils.StringUtils;
 import com.dandelion.system.dao.*;
@@ -48,6 +49,9 @@ public class ReceptionPostsController {
     @Autowired
     private SectionMapper sectionMapper;
 
+    @Autowired
+    private RedisCache redisCache;
+
     @GetMapping("/queryNewPost")
     public ResponseResult queryNewPost(){
         return ResponseResult.success(postsMapper.selectNewPost());
@@ -71,6 +75,16 @@ public class ReceptionPostsController {
     @GetMapping("/queryUpdatePost/{postId}")
     public ResponseResult queryUpdatePost(@PathVariable String postId){
         return ResponseResult.success(postsMapper.selectPostUpdateVo(postId));
+    }
+
+    @GetMapping("/searchPost")
+    public ResponseResult search(@RequestParam(defaultValue = "1") Integer currentPage,
+                                 @RequestParam(defaultValue = "10") Integer pageSize,
+                                 @RequestParam String value){
+        Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
+        IPage<PostsVo> page = postsMapper.selectPostByKeyword(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),value);
+        setPostsInfo(page);
+        return ResponseResult.success(page,null);
     }
 
 
@@ -204,6 +218,7 @@ public class ReceptionPostsController {
         post.setUserId(SecurityUtils.getUserId());
         post.setCreateTime(new Date());
         postsService.save(post);
+        redisCache.deleteObject("topNums");
         return ResponseResult.success(post.getId(),"");
     }
 

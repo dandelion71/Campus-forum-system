@@ -42,6 +42,16 @@ public class RedisCache {
     }
 
     /**
+     * key是否存在
+     *
+     * @param key     Redis键
+     * @return true=存在；false=不存在
+     */
+    public boolean existKey(final String key) {
+        return redisTemplate.hasKey(key);
+    }
+
+    /**
      * 设置有效时间
      *
      * @param key     Redis键
@@ -80,8 +90,8 @@ public class RedisCache {
      *
      * @param key
      */
-    public boolean deleteObject(final String key) {
-        return redisTemplate.delete(key);
+    public void deleteObject(final String key) {
+        redisTemplate.delete(key);
     }
 
     /**

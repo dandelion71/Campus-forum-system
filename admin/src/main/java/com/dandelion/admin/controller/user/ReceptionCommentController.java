@@ -1,5 +1,6 @@
 package com.dandelion.admin.controller.user;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -7,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
+import com.dandelion.common.utils.RedisCache;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.common.utils.StringUtils;
 import com.dandelion.system.dao.Comment;
@@ -21,9 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 
 @RestController
@@ -38,6 +39,9 @@ public class ReceptionCommentController {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private RedisCache redisCache;
+
     @GetMapping("/queryUpdateComment/{commentId}")
     public ResponseResult queryUpdateComment(@PathVariable String commentId){
         String content = commentService.getObj(new LambdaQueryWrapper<Comment>().select(Comment::getContent).eq(Comment::getId, commentId), Object::toString);
@@ -46,13 +50,21 @@ public class ReceptionCommentController {
 
     @GetMapping("/queryHotComment/{postId}")
     public ResponseResult queryHotComment(@PathVariable String postId){
-        List<Comment> commentList = commentService.list(new LambdaQueryWrapper<Comment>()
-                .eq(Comment::getPostId, postId)
-                .eq(Comment::getParentId, 0)
-                .gt(Comment::getLikesNum, 10)
-                .orderByDesc(Comment::getLikesNum));
-        setChildrenComment(commentList,0,0);
-        return ResponseResult.success(commentList);
+        String key = "HotComment-"+postId;
+        boolean flag = redisCache.existKey(key);
+        Map<String, List<Comment>> map = redisCache.getCacheMap(key);
+        if (!flag){
+            List<Comment> commentList = commentService.list(new LambdaQueryWrapper<Comment>()
+                    .eq(Comment::getPostId, postId)
+                    .eq(Comment::getParentId, 0)
+                    .gt(Comment::getLikesNum, 10)
+                    .orderByDesc(Comment::getLikesNum));
+            setChildrenComment(commentList,0,0);
+            map.put("list", commentList);
+            redisCache.setCacheMap(key,map);
+            redisCache.expire(key,30, TimeUnit.MINUTES);
+        }
+        return ResponseResult.success(map.get("list"));
     }
 
 
@@ -60,47 +72,64 @@ public class ReceptionCommentController {
     public ResponseResult queryComment(@RequestParam(defaultValue = "1") Integer currentPage,
                                        @RequestParam(defaultValue = "10") Integer pageSize,
                                        @PathVariable String postId) {
-        Page<Comment> commentPage = new Page<>(currentPage, pageSize);
-        IPage<Comment> page = commentService.page(commentPage,new LambdaQueryWrapper<Comment>()
-                        .eq(Comment::getPostId,postId)
-                        .eq(Comment::getParentId,0)
-                        .orderByAsc(Comment::getCreateTime));
-        List<Comment> comments = page.getRecords();
-        setChildrenComment(comments,currentPage,pageSize);
-        return ResponseResult.success(page);
+        String key = "queryCommentPage-"+postId+"-"+currentPage;
+        boolean flag = redisCache.existKey(key);
+        Map<String,IPage<Comment>> map = redisCache.getCacheMap(key);
+        if(!flag){
+            Page<Comment> commentPage = new Page<>(currentPage, pageSize);
+            IPage<Comment> page = commentService.page(commentPage,new LambdaQueryWrapper<Comment>()
+                    .eq(Comment::getPostId,postId)
+                    .eq(Comment::getParentId,0)
+                    .orderByAsc(Comment::getCreateTime));
+            List<Comment> comments = page.getRecords();
+            setChildrenComment(comments,currentPage,pageSize);
+            map.put("page",page);
+            redisCache.setCacheMap(key,map);
+            redisCache.expire(key,7,TimeUnit.DAYS);
+        }
+        return ResponseResult.success(map.get("page"));
     }
 
     @GetMapping("/queryChildrenComment/{postId}/{parentId}")
     public ResponseResult queryChildrenComment(@RequestParam(defaultValue = "1") Integer currentPage,
                                                @RequestParam(defaultValue = "5") Integer pageSize,
                                                @PathVariable String postId, @PathVariable String parentId) {
-        Page<Comment> childrenCommentPage = new Page<>(currentPage, pageSize);
-        IPage<Comment> page = commentService.page(childrenCommentPage,new LambdaQueryWrapper<Comment>()
-                        .eq(Comment::getPostId,postId)
-                        .eq(Comment::getParentId,parentId)
-                        .orderByAsc(Comment::getCreateTime));
-        if (page.getTotal()==0){
-            return ResponseResult.success(null);
-        }
-        List<Comment> childrenComment= page.getRecords();
-        Object principal = SecurityUtils.getAuthentication().getPrincipal();
-        for (Comment comment : childrenComment) {
-            if ("anonymousUser".equals(principal)){
-                comment.setIsEdit(false);
+        String key = "queryChildrenComment-"+postId+"-"+parentId+"-"+currentPage;
+        boolean flag = redisCache.existKey(key);
+        Map<String,IPage<Comment>> map = redisCache.getCacheMap(key);
+        if(!flag){
+            Page<Comment> childrenCommentPage = new Page<>(currentPage, pageSize);
+            IPage<Comment> page = commentService.page(childrenCommentPage,new LambdaQueryWrapper<Comment>()
+                    .eq(Comment::getPostId,postId)
+                    .eq(Comment::getParentId,parentId)
+                    .orderByAsc(Comment::getCreateTime));
+            if (page.getTotal()==0){
+                page=null;
             }else {
-                if(SecurityUtils.isAdmin(SecurityUtils.getUserId())){
-                    comment.setIsEdit(true);
-                }else comment.setIsEdit(SecurityUtils.getUserId().equals(comment.getUserId()));
+                List<Comment> childrenComment= page.getRecords();
+                Object principal = SecurityUtils.getAuthentication().getPrincipal();
+                for (Comment comment : childrenComment) {
+                    if ("anonymousUser".equals(principal)){
+                        comment.setIsEdit(false);
+                    }else {
+                        if(SecurityUtils.isAdmin(SecurityUtils.getUserId())){
+                            comment.setIsEdit(true);
+                        }else comment.setIsEdit(SecurityUtils.getUserId().equals(comment.getUserId()));
+                    }
+                    comment.setUser(userMapper.getUserVoById(comment.getUserId()));
+                    comment.setTargetUser(userMapper.getUserVoById(comment.getTargetUserId()));
+                }
             }
-            comment.setUser(userMapper.getUserVoById(comment.getUserId()));
-            comment.setTargetUser(userMapper.getUserVoById(comment.getTargetUserId()));
+            map.put("page",page);
+            redisCache.setCacheMap(key,map);
+            redisCache.expire(key,7,TimeUnit.DAYS);
         }
-        return ResponseResult.success(page);
+        return ResponseResult.success(map.get("page"));
     }
 
     @PreAuthorize("@dandelion.hasAuthority('user:comment:likes')")
     @PostMapping("/addLikes/{commentId}")
-    public ResponseResult addLikes(@PathVariable String commentId){
+    public ResponseResult addLikes(@RequestParam Map<String,String> map,@PathVariable String commentId){
         String userId = SecurityUtils.getUserId().toString();
         LikesVo likes = commentMapper.selectLikes(commentId,userId);
         if (Objects.isNull(likes)){
@@ -114,25 +143,33 @@ public class ReceptionCommentController {
         }
         Long likesNum = commentMapper.selectLikesNum(commentId);
         commentService.update(new LambdaUpdateWrapper<Comment>().eq(Comment::getId,commentId).set(Comment::getLikesNum,likesNum));
+        String postId = commentService.getObj(new LambdaQueryWrapper<Comment>().select(Comment::getPostId).eq(Comment::getId,commentId),Object::toString);
+        String currentPage = map.get("currentPage");
+        redisCache.deleteObject("queryCommentPage-"+postId+"-"+currentPage);
         return ResponseResult.success(likesNum);
     }
 
     @Log(title = "评论管理",businessType = BusinessType.UPDATE)
     @PostMapping("/editComment")
     @PreAuthorize("@dandelion.hasAuthority('user:comment:edit')")
-    public ResponseResult editComment(@RequestBody Comment comment){
+    public ResponseResult editComment(@RequestParam Map<String,String> map,@RequestBody Comment comment){
         comment.setUpdateBy(SecurityUtils.getUsername());
         comment.setUpdateTime(new Date());
         commentService.updateById(comment);
+        String currentPage= map.get("currentPage");
+        redisCache.deleteObject("queryCommentPage-"+comment.getPostId()+"-"+currentPage);
         return ResponseResult.success();
     }
 
     @PreAuthorize("@dandelion.hasAuthority('user:comment:add')")
     @PostMapping("/saveComment")
-    public ResponseResult saveComment(@RequestBody Comment comment){
+    public ResponseResult saveComment(@RequestParam Map<String,String> map,@RequestBody Comment comment){
         comment.setCreateTime(new Date());
         comment.setUserId(SecurityUtils.getUserId());
         commentService.save(comment);
+        redisCache.deleteObject("topNums");
+        String currentPage= map.get("currentPage");
+        redisCache.deleteObject("queryCommentPage-"+comment.getPostId()+"-"+currentPage);
         return ResponseResult.success();
     }
 

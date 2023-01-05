@@ -17,10 +17,7 @@ import com.dandelion.system.mapper.PostsMapper;
 import com.dandelion.system.mapper.SectionMapper;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.*;
-import com.dandelion.system.vo.PostUserVo;
-import com.dandelion.system.vo.PostsSimpleVo;
-import com.dandelion.system.vo.PostsVo;
-import com.dandelion.system.vo.UserDynamic;
+import com.dandelion.system.vo.*;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -55,6 +52,12 @@ public class ReceptionUserController {
 
     @Autowired
     private RedisCache redisCache;
+
+    @GetMapping("/searchUser")
+    public ResponseResult searchUser(@RequestParam String value) {
+        List<UserVo> userList = userMapper.getUserByKeyword(value);
+        return ResponseResult.success(userList);
+    }
 
     @GetMapping("/query/byId/{id}")
     public ResponseResult getOneById(@PathVariable String id) {
@@ -108,7 +111,7 @@ public class ReceptionUserController {
     public ResponseResult getUserNameExists(@PathVariable String username) {
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, username));
         if(Objects.isNull(user)){
-            return ResponseResult.success(true,"");
+            return ResponseResult.success(true,"用户名不存在");
         }else {
             return ResponseResult.success(false,"用户名已存在");
         }
@@ -201,6 +204,30 @@ public class ReceptionUserController {
         user.setUpdateTime(new Date());
         userService.updateById(user);
         return ResponseResult.success("");
+    }
+
+    @PostMapping("/checkEmailAndPhone")
+    public ResponseResult checkEmailAndPhone(@RequestBody User user) {
+        User updateUser = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, user.getUserName()));
+        if (user.getEmail().equals(updateUser.getEmail())&&user.getPhonenumber().equals(updateUser.getPhonenumber())){
+            return ResponseResult.success(true);
+        }else {
+            return ResponseResult.success(false);
+        }
+    }
+
+    @Log(title = "用户密码修改", businessType = BusinessType.UPDATE)
+    @PostMapping("/edit/forgotPassword")
+    public ResponseResult forgotPassword(@RequestBody Map<String,String> param) {
+        String encodePassword = SecurityUtils.encryptPassword(param.get("newPass"));
+        String userName = param.get("userName");
+        boolean update = userService.update(new LambdaUpdateWrapper<User>()
+                .eq(User::getUserName, userName)
+                .set(User::getPassword, encodePassword)
+                .set(User::getPwdUpdateDate, new Date())
+                .set(User::getUpdateBy, userName)
+                .set(User::getUpdateTime, new Date()));
+        return ResponseResult.success(true);
     }
 
     @Log(title = "用户密码修改", businessType = BusinessType.UPDATE)

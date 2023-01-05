@@ -62,11 +62,10 @@ public class AuthenticationController {
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:authentication:edit')")
     public ResponseResult editPass(@RequestBody Authentication authentication){
+        userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,authentication.getUserId()).set(User::getStatus,authentication.getStatus()));
+        authentication.setStatus(null);
         authentication.setUpdateBy(SecurityUtils.getUsername());
         authentication.setUpdateTime(new Date());
-        userService.update(new LambdaUpdateWrapper<User>()
-                        .eq(User::getId,authentication.getUserId())
-                        .set(User::getStatus,!authentication.getPass().equals("0") ? 0:1 ));
         authenticationService.updateById(authentication);
         return ResponseResult.success("");
     }

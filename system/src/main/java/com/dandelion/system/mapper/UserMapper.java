@@ -37,4 +37,6 @@ public interface UserMapper extends BaseMapper<User> {
     Long selectUserCollectionPost(String userId);
 
     IPage<UserDynamic> selectUserDynamic(Page<UserDynamic> page, String userId);
+
+    List<UserVo> getUserByKeyword(String value);
 }

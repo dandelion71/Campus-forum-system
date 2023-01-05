@@ -103,4 +103,11 @@
         WHERE user_id=#{userId}
         ORDER BY create_time DESC
     </select>
+    <select id="getUserByKeyword" resultType="com.dandelion.system.vo.UserVo">
+        select id,user_name,avatar
+        from sys_user
+        <where>
+            user_name like CONCAT('%',#{keyword},'%')
+        </where>
+    </select>
 </mapper>
