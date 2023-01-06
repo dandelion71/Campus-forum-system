@@ -182,6 +182,7 @@ public class ReceptionCommentController {
         redisCache.deleteObject("queryCommentPage-"+comment.getPostId()+"-"+currentPage);
         Posts posts = postsService.getById(comment.getPostId());
         redisCache.deleteObject(redisCache.scan("commentTime-"+posts.getSectionId()+"-0-*"));
+        redisCache.deleteObject(redisCache.scan("queryPostUser-*-"+SecurityUtils.getUserId()));
         redisCache.deleteObject(redisCache.scan("commentTime-"+posts.getSectionId()+"-"+posts.getTagId()+"-*"));
         return ResponseResult.success();
     }

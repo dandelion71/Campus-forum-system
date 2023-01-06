@@ -262,6 +262,8 @@ public class ReceptionPostsController {
         redisCache.deleteObject("queryNewPost");
         redisCache.deleteObject("querySectionById");
         redisCache.deleteObject(redisCache.scan("postTime-"+post.getSectionId()+"-0-*"));
+        redisCache.deleteObject(redisCache.scan("queryPostUser-*-"+SecurityUtils.getUserId()));
+        redisCache.deleteObject(redisCache.scan("queryUserPosts-*-"+SecurityUtils.getUserId()));
         redisCache.deleteObject(redisCache.scan("postTime-"+post.getSectionId()+"-"+post.getTagId()+"-*"));
         return ResponseResult.success(post.getId(),"");
     }

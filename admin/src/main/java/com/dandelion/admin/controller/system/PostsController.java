@@ -104,6 +104,7 @@ public class PostsController {
         postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,id).set(Posts::getElite,elite));
         redisCache.deleteObject("queryNewElitePost");
         Posts posts = postsService.getById(id);
+        redisCache.deleteObject(redisCache.scan("queryPostUser-*-"+posts.getUserId()));
         redisCache.deleteObject(redisCache.scan("queryPost-"+ posts.getId() +"-*"));
         return ResponseResult.success(Massage.UPDATE.value());
     }

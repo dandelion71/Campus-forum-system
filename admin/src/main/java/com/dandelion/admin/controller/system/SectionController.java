@@ -152,6 +152,7 @@ public class SectionController {
         for (String tagId : tagIds) {
             sectionMapper.insertSectionTag(sectionId,tagId);
         }
+        redisCache.deleteObject("querySectionVo-"+sectionId);
         return ResponseResult.success(Massage.SAVE.value());
     }
 
@@ -206,6 +207,7 @@ public class SectionController {
         for (String tagId : tagIds) {
             sectionMapper.delSectionTag(sectionId,tagId);
         }
+        redisCache.deleteObject("querySectionVo-"+sectionId);
         return ResponseResult.success(Massage.DELETE.value());
     }
 

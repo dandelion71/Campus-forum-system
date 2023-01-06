@@ -25,6 +25,7 @@ import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/reception/user")
@@ -88,16 +89,27 @@ public class ReceptionUserController {
     @GetMapping("/queryPostUser/{postId}")
     public ResponseResult queryPostUser(@PathVariable String postId) {
         String userId=postsService.getObj(new LambdaQueryWrapper<Posts>().select(Posts::getUserId).eq(Posts::getId,postId),Object::toString);
-        PostUserVo postUserVo = userMapper.getPostUserById(userId);
-        setPostsUser(postUserVo);
-        return ResponseResult.success(postUserVo);
+        String key = "queryPostUser-"+postId+"-"+userId;
+        Map<String, PostUserVo> map = redisCache.getCacheMap(key);
+        if (!redisCache.existKey(key)){
+            PostUserVo postUserVo = userMapper.getPostUserById(userId);
+            setPostsUser(postUserVo);
+            map.put("bean",postUserVo);
+            redisCache.setCacheMap(key,map,7, TimeUnit.DAYS);
+        }
+        return ResponseResult.success(map.get("bean"));
     }
 
     @GetMapping("/queryUserPosts/{postId}")
     public ResponseResult queryUserPosts(@PathVariable String postId) {
         String userId=postsService.getObj(new LambdaQueryWrapper<Posts>().select(Posts::getUserId).eq(Posts::getId,postId),Object::toString);
-        List<PostsSimpleVo> posts = userMapper.selectUserPost(userId);
-        return ResponseResult.success(posts);
+        String key = "queryUserPosts-"+postId+"-"+userId;
+        Map<String, List<PostsSimpleVo>> map = redisCache.getCacheMap(key);
+        if (!redisCache.existKey(key)){
+            map.put("list",userMapper.selectUserPost(userId));
+            redisCache.setCacheMap(key,map,7, TimeUnit.DAYS);
+        }
+        return ResponseResult.success(map.get("list"));
     }
 
     @GetMapping("/query/getAvatar/{username}")
@@ -121,6 +133,7 @@ public class ReceptionUserController {
     public ResponseResult queryUserIsMuted(){
         return isMuted(SecurityUtils.getUserId().toString());
     }
+
     private ResponseResult isMuted(String userId){
         String muted = userService.getById(userId).getMuted();
         Map<String,Object> map=new HashMap<>();
@@ -191,10 +204,29 @@ public class ReceptionUserController {
         }
     }
 
-    @PostMapping("/updateAvatar")
-    public ResponseResult updateAvatar(@RequestBody Map<String,String> param){
-        userService.update(new LambdaUpdateWrapper<User>().set(User::getAvatar,param.get("avatar")).eq(User::getId,SecurityUtils.getUserId()));
-        return ResponseResult.success("");
+//    @PostMapping("/updateAvatar")
+//    public ResponseResult updateAvatar(@RequestBody Map<String,String> param){
+//        userService.update(new LambdaUpdateWrapper<User>().set(User::getAvatar,param.get("avatar")).eq(User::getId,SecurityUtils.getUserId()));
+//        return ResponseResult.success("");
+//    }
+
+    @PostMapping("/editUserName/{username}")
+    @PreAuthorize("@dandelion.hasAuthority('user:user:edit')")
+    public ResponseResult editUserName(@PathVariable String username) {
+        String key = "editUserName-"+SecurityUtils.getUserId();
+        Map<String, Boolean> map = redisCache.getCacheMap(key);
+        map.put("flag",false);
+        if (!redisCache.existKey(key)){
+            User user = new User();
+            user.setUserName(username);
+            user.setId(SecurityUtils.getUserId());
+            user.setUpdateBy(username);
+            user.setUpdateTime(new Date());
+            userService.updateById(user);
+            map.put("flag",true);
+            redisCache.setCacheMap(key,map,365,TimeUnit.DAYS);
+        }
+        return ResponseResult.success(map.get("flag"));
     }
 
     @PostMapping("/edit")

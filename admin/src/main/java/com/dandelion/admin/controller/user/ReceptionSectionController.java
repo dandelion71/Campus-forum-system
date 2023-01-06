@@ -114,7 +114,7 @@ public class ReceptionSectionController {
         Map<String, String> map = redisCache.getCacheMap(key);
         if (!redisCache.existKey(key)){
             map.put("value",sectionMapper.selectById(sectionId).getNotice());
-            redisCache.setCacheMap(key,map);
+            redisCache.setCacheMap(key,map,7,TimeUnit.DAYS);
         }
         return ResponseResult.success(map.get("value"),"");
     }
@@ -125,7 +125,7 @@ public class ReceptionSectionController {
         Map<String, List<UserVo>> map = redisCache.getCacheMap(key);
         if (!redisCache.existKey(key)){
             map.put("list",sectionMapper.getSectionModerator(sectionId));
-            redisCache.setCacheMap(key,map);
+            redisCache.setCacheMap(key,map,7,TimeUnit.DAYS);
         }
         return ResponseResult.success(map.get("list"));
     }
