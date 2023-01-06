@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 
 @RestController
@@ -63,7 +64,7 @@ public class LoginController {
         map.put("token", jwt);
         map.put("roleKey", loginUser.getRoleKey());
         map.put("user",loginUser.getUser());
-        redisCache.setCacheObject(loginUser.getUuid(), loginUser);
+        redisCache.setCacheObject(loginUser.getUuid(), loginUser,7, TimeUnit.DAYS);
         userService.update(new LambdaUpdateWrapper<User>()
                 .eq(User::getUserName, loginBody.getUserName())
                 .set(User::getLoginDate, new Date())

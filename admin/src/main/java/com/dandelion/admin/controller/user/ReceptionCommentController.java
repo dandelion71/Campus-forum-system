@@ -17,6 +17,7 @@ import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.mapper.CommentMapper;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.CommentService;
+import com.dandelion.system.service.PostsService;
 import com.dandelion.system.vo.LikesVo;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,9 @@ public class ReceptionCommentController {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private PostsService postsService;
 
     @Autowired
     private RedisCache redisCache;
@@ -62,7 +66,7 @@ public class ReceptionCommentController {
             setChildrenComment(commentList,0,0);
             map.put("list", commentList);
             redisCache.setCacheMap(key,map);
-            redisCache.expire(key,30, TimeUnit.MINUTES);
+            redisCache.expire(key,30, TimeUnit.SECONDS);
         }
         return ResponseResult.success(map.get("list"));
     }
@@ -156,8 +160,12 @@ public class ReceptionCommentController {
         comment.setUpdateBy(SecurityUtils.getUsername());
         comment.setUpdateTime(new Date());
         commentService.updateById(comment);
+        redisCache.deleteObject("queryNewPostComment");
         String currentPage= map.get("currentPage");
         redisCache.deleteObject("queryCommentPage-"+comment.getPostId()+"-"+currentPage);
+        Posts posts = postsService.getById(comment.getPostId());
+        redisCache.deleteObject(redisCache.scan("commentTime-"+posts.getSectionId()+"-0-*"));
+        redisCache.deleteObject(redisCache.scan("commentTime-"+posts.getSectionId()+"-"+posts.getTagId()+"-*"));
         return ResponseResult.success();
     }
 
@@ -168,8 +176,12 @@ public class ReceptionCommentController {
         comment.setUserId(SecurityUtils.getUserId());
         commentService.save(comment);
         redisCache.deleteObject("topNums");
+        redisCache.deleteObject("queryNewPostComment");
         String currentPage= map.get("currentPage");
         redisCache.deleteObject("queryCommentPage-"+comment.getPostId()+"-"+currentPage);
+        Posts posts = postsService.getById(comment.getPostId());
+        redisCache.deleteObject(redisCache.scan("commentTime-"+posts.getSectionId()+"-0-*"));
+        redisCache.deleteObject(redisCache.scan("commentTime-"+posts.getSectionId()+"-"+posts.getTagId()+"-*"));
         return ResponseResult.success();
     }
 

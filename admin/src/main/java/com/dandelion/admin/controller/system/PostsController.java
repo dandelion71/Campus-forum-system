@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
+import com.dandelion.common.utils.RedisCache;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.Comment;
 import com.dandelion.system.dao.Posts;
@@ -45,6 +46,9 @@ public class PostsController {
     @Autowired
     private CommentService commentService;
 
+    @Autowired
+    private RedisCache redisCache;
+
     @ApiOperation(value = "帖子管理")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:list')")
     @GetMapping("/list")
@@ -71,28 +75,6 @@ public class PostsController {
         return ResponseResult.success(page);
     }
 
-//    @ApiOperation(value = "帖子添加")
-//    @Log(title = "帖子管理",businessType = BusinessType.INSERT)
-//    @PostMapping("/add")
-//    @PreAuthorize("@dandelion.hasAuthority('system:posts:add')")
-//    public ResponseResult add(@RequestBody Posts posts){
-//        posts.setUserId(SecurityUtils.getUserId());
-//        posts.setCreateTime(new Date());
-//        postsService.save(posts);
-//        return ResponseResult.success(Massage.SAVE.value());
-//    }
-
-//    @ApiOperation(value = "帖子修改")
-//    @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
-//    @PostMapping("/edit")
-//    @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
-//    public ResponseResult edit(@RequestBody Posts posts){
-//        posts.setUpdateBy(SecurityUtils.getUsername());
-//        posts.setUpdateTime(new Date());
-//        postsService.updateById(posts);
-//        return ResponseResult.success(Massage.UPDATE.value());
-//    }
-
     @ApiOperation(value = "帖子修改",notes = "根据 ID 设置是否关闭")
     @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
     @PostMapping("/editStatus/{id}/{top}")
@@ -108,6 +90,9 @@ public class PostsController {
     @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
     public ResponseResult editTop(@PathVariable String id, @PathVariable String top){
         postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,id).set(Posts::getTop,top));
+        Posts posts = postsService.getById(id);
+        redisCache.deleteObject(redisCache.scan("commentTime-"+posts.getSectionId()+"-0-*"));
+        redisCache.deleteObject(redisCache.scan("queryPost-"+ posts.getId() +"-*"));
         return ResponseResult.success(Massage.UPDATE.value());
     }
 
@@ -117,6 +102,9 @@ public class PostsController {
     @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
     public ResponseResult editElite(@PathVariable String id, @PathVariable String elite){
         postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,id).set(Posts::getElite,elite));
+        redisCache.deleteObject("queryNewElitePost");
+        Posts posts = postsService.getById(id);
+        redisCache.deleteObject(redisCache.scan("queryPost-"+ posts.getId() +"-*"));
         return ResponseResult.success(Massage.UPDATE.value());
     }
 

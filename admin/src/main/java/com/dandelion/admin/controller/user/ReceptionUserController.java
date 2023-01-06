@@ -196,6 +196,7 @@ public class ReceptionUserController {
         userService.update(new LambdaUpdateWrapper<User>().set(User::getAvatar,param.get("avatar")).eq(User::getId,SecurityUtils.getUserId()));
         return ResponseResult.success("");
     }
+
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('user:user:edit')")
     public ResponseResult edit(@RequestBody User user) {

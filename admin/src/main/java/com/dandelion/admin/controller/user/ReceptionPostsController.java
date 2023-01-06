@@ -16,19 +16,16 @@ import com.dandelion.system.mapper.SectionMapper;
 import com.dandelion.system.mapper.TagMapper;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.PostsService;
-import com.dandelion.system.vo.CollectionVo;
-import com.dandelion.system.vo.LikesVo;
-import com.dandelion.system.vo.PostsUpdateVo;
-import com.dandelion.system.vo.PostsVo;
+import com.dandelion.system.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/reception/posts")
@@ -54,22 +51,46 @@ public class ReceptionPostsController {
 
     @GetMapping("/queryNewPost")
     public ResponseResult queryNewPost(){
-        return ResponseResult.success(postsMapper.selectNewPost());
+        String key = "queryNewPost";
+        Map<String, List<PostsSimpleVo>> map = redisCache.getCacheMap(key);
+        if (!redisCache.existKey(key)){
+            map.put("list",postsMapper.selectNewPost());
+            redisCache.setCacheMap(key,map,7,TimeUnit.DAYS);
+        }
+        return ResponseResult.success(map.get("list"));
     }
 
     @GetMapping("/queryNewElitePost")
     public ResponseResult queryNewElitePost(){
-        return ResponseResult.success(postsMapper.selectNewElitePost());
+        String key = "queryNewElitePost";
+        Map<String, List<PostsSimpleVo>> map = redisCache.getCacheMap(key);
+        if (!redisCache.existKey(key)){
+            map.put("list",postsMapper.selectNewElitePost());
+            redisCache.setCacheMap(key,map,7,TimeUnit.DAYS);
+        }
+        return ResponseResult.success(map.get("list"));
     }
 
     @GetMapping("/queryNewPostComment")
     public ResponseResult queryNewPostComment(){
-        return ResponseResult.success(postsMapper.selectNewPostComment());
+        String key = "queryNewPostComment";
+        Map<String, List<PostsSimpleVo>> map = redisCache.getCacheMap(key);
+        if (!redisCache.existKey(key)){
+            map.put("list",postsMapper.selectNewPostComment());
+            redisCache.setCacheMap(key,map,7,TimeUnit.DAYS);
+        }
+        return ResponseResult.success(map.get("list"));
     }
 
     @GetMapping("/queryHotPost/{sectionId}")
     public ResponseResult queryHotPost(@PathVariable String sectionId){
-        return ResponseResult.success(postsMapper.selectHotPost(sectionId));
+        String key = "queryHotPost-"+sectionId;
+        Map<String, List<PostsSimpleVo>> map = redisCache.getCacheMap(key);
+        if (!redisCache.existKey(key)){
+            map.put("list",postsMapper.selectHotPost(sectionId));
+            redisCache.setCacheMap(key,map,1, TimeUnit.DAYS);
+        }
+        return ResponseResult.success(map.get("list"));
     }
 
     @GetMapping("/queryUpdatePost/{postId}")
@@ -84,64 +105,87 @@ public class ReceptionPostsController {
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
         IPage<PostsVo> page = postsMapper.selectPostByKeyword(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),value);
         setPostsInfo(page);
-        return ResponseResult.success(page,null);
+        return ResponseResult.success(page);
     }
 
 
     @GetMapping("/queryPost/{postId}")
     public ResponseResult queryPost(@PathVariable String postId){
-        Posts post = postsService.getOne(new LambdaQueryWrapper<Posts>().eq(Posts::getId,postId).ne(Posts::getDelFlag,2));
-        Assert.notNull(post,"该帖子已被删除");
-        postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,post.getId()).set(Posts::getSeeNum,post.getSeeNum()+1));
-        post.setUser(userMapper.getUserVoById(post.getUserId()));
-        post.setTag(tagMapper.getTagVoById(post.getTagId()));
-        post.setSection(sectionMapper.getSectionVoById(post.getSectionId()));
         Object principal = SecurityUtils.getAuthentication().getPrincipal();
+        String key;
         if ("anonymousUser".equals(principal)){
-            post.setIsUserLike(true);
-            post.setIsUserCollection(true);
-            post.setIsEditPost(false);
+            key = "queryPost-"+ postId + "-anonymousUser";
         }else {
-            LikesVo likes = postsMapper.selectLikes(postId, SecurityUtils.getUserId().toString());
-            if (Objects.isNull(likes)){
-                post.setIsUserLike(true);
-            }else {
-                post.setIsUserLike(likes.getIsLike().equals("0"));
-            }
-            CollectionVo collection = postsMapper.selectCollection(postId,SecurityUtils.getUserId().toString());
-            if (Objects.isNull(collection)){
-                post.setIsUserCollection(true);
-            }else {
-                post.setIsUserCollection(collection.getIsCollection().equals("0"));
-            }
-            if(SecurityUtils.isAdmin(SecurityUtils.getUserId())){
-                post.setIsEditPost(true);
-            }else if(StringUtils.isNotEmpty(sectionMapper.getSectionUser(SecurityUtils.getUserId(),post.getSectionId().toString()))){
-                post.setIsEditPost(true);
-            }else post.setIsEditPost(SecurityUtils.getUserId().equals(post.getUserId()));
+            key = "queryPost-"+ postId + "-" + SecurityUtils.getUserId();
         }
-        return ResponseResult.success(post);
+        Map<String, Posts> map = redisCache.getCacheMap(key);
+        if (!redisCache.existKey(key)) {
+            Posts post = postsService.getOne(new LambdaQueryWrapper<Posts>().eq(Posts::getId,postId).ne(Posts::getDelFlag,2));
+            Assert.notNull(post,"该帖子已被删除");
+            postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,post.getId()).set(Posts::getSeeNum,post.getSeeNum()+1));
+            post.setUser(userMapper.getUserVoById(post.getUserId()));
+            post.setTag(tagMapper.getTagVoById(post.getTagId()));
+            post.setSection(sectionMapper.getSectionVoById(post.getSectionId()));
+            if ("anonymousUser".equals(principal)){
+                post.setIsUserLike(true);
+                post.setIsUserCollection(true);
+                post.setIsEditPost(false);
+            }else {
+                LikesVo likes = postsMapper.selectLikes(postId, SecurityUtils.getUserId().toString());
+                if (Objects.isNull(likes)){
+                    post.setIsUserLike(true);
+                }else {
+                    post.setIsUserLike(likes.getIsLike().equals("0"));
+                }
+                CollectionVo collection = postsMapper.selectCollection(postId,SecurityUtils.getUserId().toString());
+                if (Objects.isNull(collection)){
+                    post.setIsUserCollection(true);
+                }else {
+                    post.setIsUserCollection(collection.getIsCollection().equals("0"));
+                }
+                if(SecurityUtils.isAdmin(SecurityUtils.getUserId())){
+                    post.setIsEditPost(true);
+                }else if(StringUtils.isNotEmpty(sectionMapper.getSectionUser(SecurityUtils.getUserId(),post.getSectionId().toString()))){
+                    post.setIsEditPost(true);
+                }else post.setIsEditPost(SecurityUtils.getUserId().equals(post.getUserId()));
+            }
+            map.put("bean",post);
+            redisCache.setCacheMap(key,map,10,TimeUnit.MINUTES);
+        }
+        return ResponseResult.success(map.get("bean"));
     }
 
     @GetMapping("/commentTime/{sectionId}")
     public ResponseResult queryDefaultPost(@RequestParam(defaultValue = "1") Integer currentPage,
                                        @RequestParam(defaultValue = "10") Integer pageSize,
                                        @PathVariable String sectionId,@RequestParam(defaultValue = "0") String tagId){
-        Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
-        IPage<PostsVo> page = postsMapper.selectDefaultPost(sectionId, tagId, postPage);
-        setPostsInfo(page);
-        return ResponseResult.success(page);
+        String key = "commentTime-"+sectionId+"-"+tagId+"-"+currentPage;
+        Map<String, IPage<PostsVo>> map = redisCache.getCacheMap(key);
+        if (!redisCache.existKey(key)){
+            Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
+            IPage<PostsVo> page = postsMapper.selectDefaultPost(sectionId, tagId, postPage);
+            setPostsInfo(page);
+            map.put("page",page);
+            redisCache.setCacheMap(key,map,1,TimeUnit.HOURS);
+        }
+        return ResponseResult.success(map.get("page"));
     }
 
     @GetMapping("/postTime/{sectionId}")
     public ResponseResult queryPostTime(@RequestParam(defaultValue = "1") Integer currentPage,
                                            @RequestParam(defaultValue = "10") Integer pageSize,
                                            @PathVariable String sectionId,@RequestParam(defaultValue = "0") String tagId){
-        Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
-        IPage<PostsVo> page = postsMapper.selectPostByTabs(postPage,
-                new QueryWrapper<PostsVo>().orderByDesc("create_time"),sectionId, tagId);
-        setPostsInfo(page);
-        return ResponseResult.success(page);
+        String key = "postTime-"+sectionId+"-"+tagId+"-"+currentPage;
+        Map<String, IPage<PostsVo>> map = redisCache.getCacheMap(key);
+        if (!redisCache.existKey(key)){
+            Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
+            IPage<PostsVo> page = postsMapper.selectPostByTabs(postPage,
+                    new QueryWrapper<PostsVo>().orderByDesc("create_time"),sectionId, tagId);
+            setPostsInfo(page);
+            map.put("page",page);
+            redisCache.setCacheMap(key,map,5,TimeUnit.MINUTES);
+        }
+        return ResponseResult.success(map.get("page"));
     }
 
     @GetMapping("/mostLike/{sectionId}")
@@ -151,7 +195,6 @@ public class ReceptionPostsController {
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
         IPage<PostsVo> page = postsMapper.selectPostByTabs(postPage,
                 new QueryWrapper<PostsVo>().orderByDesc("likes_num"),sectionId, tagId);
-        List<PostsVo> records = page.getRecords();
         setPostsInfo(page);
         return ResponseResult.success(page);
     }
@@ -209,9 +252,6 @@ public class ReceptionPostsController {
         return ResponseResult.success(page);
     }
 
-
-
-
     @PreAuthorize("@dandelion.hasAuthority('user:posts:add')")
     @PostMapping("/addPost")
     public ResponseResult addPost(@RequestBody Posts post){
@@ -219,6 +259,9 @@ public class ReceptionPostsController {
         post.setCreateTime(new Date());
         postsService.save(post);
         redisCache.deleteObject("topNums");
+        redisCache.deleteObject("queryNewPost");
+        redisCache.deleteObject(redisCache.scan("postTime-"+post.getSectionId()+"-0-*"));
+        redisCache.deleteObject(redisCache.scan("postTime-"+post.getSectionId()+"-"+post.getTagId()+"-*"));
         return ResponseResult.success(post.getId(),"");
     }
 
@@ -229,6 +272,7 @@ public class ReceptionPostsController {
         post.setUpdateBy(SecurityUtils.getUsername());
         post.setUpdateTime(new Date());
         postsService.updateById(post);
+        redisCache.deleteObject(redisCache.scan("queryPost-"+ post.getId() +"-*"));
         return ResponseResult.success(post.getId(),"");
     }
 
@@ -248,6 +292,7 @@ public class ReceptionPostsController {
         }
         Long likesNum = postsMapper.selectLikesNum(postId);
         postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,postId).set(Posts::getLikesNum,likesNum));
+        redisCache.deleteObject(redisCache.scan("queryPost-"+ postId +"-*"));
         return ResponseResult.success(likesNum);
     }
 
@@ -267,10 +312,9 @@ public class ReceptionPostsController {
         }
         Long collectionNum = postsMapper.selectCollectionNum(postId);
         postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,postId).set(Posts::getCollectionNum,collectionNum));
+        redisCache.deleteObject(redisCache.scan("queryPost-"+ postId +"-*"));
         return ResponseResult.success(collectionNum);
     }
-
-
 
 
     private void setPostsInfo(IPage<PostsVo> page){

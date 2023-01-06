@@ -3,12 +3,11 @@ package com.dandelion.common.utils;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.BoundSetOperations;
-import org.springframework.data.redis.core.HashOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Component;
+import org.springframework.data.redis.core.ScanOptions;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -165,6 +164,21 @@ public class RedisCache {
     }
 
     /**
+     * 缓存Map
+     *
+     * @param key
+     * @param dataMap
+     * @param timeout  时间
+     * @param timeUnit 时间颗粒度
+     */
+    public <T> void setCacheMap(final String key, final Map<String, T> dataMap,final Integer timeout, final TimeUnit timeUnit) {
+        if (dataMap != null) {
+            redisTemplate.opsForHash().putAll(key, dataMap);
+            redisTemplate.expire(key, timeout, timeUnit);
+        }
+    }
+
+    /**
      * 获得缓存的Map
      *
      * @param key
@@ -228,4 +242,25 @@ public class RedisCache {
     public Collection<String> keys(final String pattern) {
         return redisTemplate.keys(pattern);
     }
+
+    /**
+     * scan 实现
+     *
+     * @param pattern       表达式，如：abc*，找出所有以abc开始的键
+     */
+    public Set<String> scan(String pattern) {
+        return (Set<String>) redisTemplate.execute((RedisCallback<Set<String>>) connection -> {
+            Set<String> keysTmp = new HashSet<>();
+            try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().count(1000L).match(pattern).build())) {
+                while (cursor.hasNext()) {
+                    keysTmp.add(new String(cursor.next(), StandardCharsets.UTF_8));
+                }
+            } catch (Exception e) {
+
+                throw new RuntimeException(e);
+            }
+            return keysTmp;
+        });
+    }
+
 }
