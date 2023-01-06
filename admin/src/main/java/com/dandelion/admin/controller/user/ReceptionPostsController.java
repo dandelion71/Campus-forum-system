@@ -260,6 +260,7 @@ public class ReceptionPostsController {
         postsService.save(post);
         redisCache.deleteObject("topNums");
         redisCache.deleteObject("queryNewPost");
+        redisCache.deleteObject("querySectionById");
         redisCache.deleteObject(redisCache.scan("postTime-"+post.getSectionId()+"-0-*"));
         redisCache.deleteObject(redisCache.scan("postTime-"+post.getSectionId()+"-"+post.getTagId()+"-*"));
         return ResponseResult.success(post.getId(),"");

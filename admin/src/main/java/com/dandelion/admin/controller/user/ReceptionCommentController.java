@@ -177,6 +177,7 @@ public class ReceptionCommentController {
         commentService.save(comment);
         redisCache.deleteObject("topNums");
         redisCache.deleteObject("queryNewPostComment");
+        redisCache.deleteObject("querySectionById");
         String currentPage= map.get("currentPage");
         redisCache.deleteObject("queryCommentPage-"+comment.getPostId()+"-"+currentPage);
         Posts posts = postsService.getById(comment.getPostId());

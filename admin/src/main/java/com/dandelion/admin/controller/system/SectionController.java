@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
+import com.dandelion.common.utils.RedisCache;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.*;
 import com.dandelion.system.mapper.RoleMapper;
@@ -42,6 +43,9 @@ public class SectionController {
 
     @Autowired
     private RoleMapper roleMapper;
+
+    @Autowired
+    private RedisCache redisCache;
 
     @ApiOperation(value = "版块管理")
     @PreAuthorize("@dandelion.hasAuthority('system:section:list')")
@@ -136,6 +140,7 @@ public class SectionController {
             sectionMapper.insertSectionUser(sectionId,userId);
             roleMapper.updateRoleByUserId(Long.valueOf(userId), 2L);
         }
+        redisCache.deleteObject("queryModerator-"+sectionId);
         return ResponseResult.success(Massage.SAVE.value());
     }
 
@@ -189,6 +194,7 @@ public class SectionController {
             sectionMapper.delSectionUser(sectionId,userId);
             roleMapper.updateRoleByUserId(Long.valueOf(userId), 3L);
         }
+        redisCache.deleteObject("queryModerator-"+sectionId);
         return ResponseResult.success(Massage.DELETE.value());
     }
 
