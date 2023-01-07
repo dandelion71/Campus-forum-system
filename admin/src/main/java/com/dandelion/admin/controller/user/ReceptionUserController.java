@@ -71,17 +71,14 @@ public class ReceptionUserController {
 
     @GetMapping("/queryUserInfo/{userId}")
     public ResponseResult queryUserInfo(@PathVariable String userId) {
-        isMuted(userId);
+        checkMuted(userId);
         PostUserVo postUserVo = userMapper.getPostUserById(userId);
         setPostsUser(postUserVo);
         postUserVo.setRole(userMapper.getRole(postUserVo.getId()).getRoleName());
         postUserVo.setCollectionPostNum(userMapper.selectUserCollectionPost(userId));
         if("1".equals(postUserVo.getMuted())){
-            List<Muted> mutedList = mutedService.list(new LambdaQueryWrapper<Muted>()
-                    .eq(Muted::getUserId, SecurityUtils.getUserId())
-                    .ne(Muted::getEffective, 1)
-                    .orderByDesc(Muted::getMutedTime));
-            postUserVo.setMutedTime(mutedList.get(0).getMutedTime());
+            Muted muted = mutedService.getOne(new LambdaQueryWrapper<Muted>().eq(Muted::getUserId, userId).eq(Muted::getEffective, 0));
+            postUserVo.setMutedTime(muted.getMutedTime());
         }
         return ResponseResult.success(postUserVo);
     }
@@ -132,43 +129,6 @@ public class ReceptionUserController {
     @GetMapping("/queryUserIsMuted")
     public ResponseResult queryUserIsMuted(){
         return isMuted(SecurityUtils.getUserId().toString());
-    }
-
-    private ResponseResult isMuted(String userId){
-        String muted = userService.getById(userId).getMuted();
-        Map<String,Object> map=new HashMap<>();
-        if ("0".equals(muted)){
-            map.put("flag",false);
-            return ResponseResult.success(map,"");
-        }else if("1".equals(muted)){
-            List<Muted> mutedList = mutedService.list(new LambdaQueryWrapper<Muted>()
-                    .eq(Muted::getUserId, userId)
-                    .ne(Muted::getEffective, 1)
-                    .orderByDesc(Muted::getMutedTime));
-            if (mutedList.size()==0){
-                userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,0));
-                map.put("flag",false);
-                return ResponseResult.success(map,"");
-            }
-            for (int i = 1; i < mutedList.size(); i++) {
-                mutedList.get(i).setEffective("1");
-            }
-            long mutedTime = mutedList.get(0).getMutedTime().getTime();
-            long nowTime = new Date().getTime();
-            if(mutedTime<nowTime){
-                mutedList.get(0).setEffective("1");
-                userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,0));
-                map.put("flag",false);
-                return ResponseResult.success(map,"");
-            }else {
-                map.put("flag",true);
-                map.put("time",mutedList.get(0).getMutedTime().getTime());
-                return ResponseResult.success(map,"你已被禁言至");
-            }
-        }else {
-            map.put("flag",true);
-            return ResponseResult.success(map,"你已被永久禁言");
-        }
     }
 
 
@@ -310,4 +270,38 @@ public class ReceptionUserController {
         postUserVo.setCommentPostNum(commentService.count(new LambdaQueryWrapper<Comment>().eq(Comment::getUserId,postUserVo.getId())));
     }
 
+    private ResponseResult isMuted(String userId){
+        String key = "mutedUser-"+userId;
+        Map<String,Object> map = new HashMap<>();
+        if (!redisCache.existKey(key)){
+            String muted = userService.getById(userId).getMuted();
+            if ("0".equals(muted)){
+                map.put("flag",false);
+                return ResponseResult.success(map);
+            }else if("1".equals(muted)){
+                userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,0));
+                mutedService.update(new LambdaUpdateWrapper<Muted>().eq(Muted::getUserId,userId).set(Muted::getEffective,1));
+                map.put("flag",false);
+                return ResponseResult.success(map);
+            }else {
+                map.put("flag",true);
+                return ResponseResult.success(map,"你已被永久禁言");
+            }
+        }else {
+            Muted muted = mutedService.getOne(new LambdaQueryWrapper<Muted>().eq(Muted::getUserId, userId).eq(Muted::getEffective, 0));
+            map.put("flag",true);
+            map.put("time",muted.getMutedTime().getTime());
+            return ResponseResult.success(map,"你已被禁言至");
+        }
+    }
+
+    private void checkMuted(String userId){
+        if (!redisCache.existKey("mutedUser-"+userId)) {
+            String muted = userService.getObj(new LambdaQueryWrapper<User>().select(User::getMuted).eq(User::getId,userId),Object::toString);
+            if ("1".equals(muted)) {
+                userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,0));
+                mutedService.update(new LambdaUpdateWrapper<Muted>().eq(Muted::getUserId, userId).set(Muted::getEffective, 1));
+            }
+        }
+    }
 }

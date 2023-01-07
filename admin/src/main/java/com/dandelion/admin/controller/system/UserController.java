@@ -112,27 +112,6 @@ public class UserController {
         return ResponseResult.success(Massage.UPDATE.value());
     }
 
-//    @ApiOperation(value = "用户密码修改",notes = "根据 id 修改用户密码")
-    @Log(title = "用户管理", businessType = BusinessType.UPDATE)
-    @PostMapping("/edit/pwd/{id}")
-    @PreAuthorize("@dandelion.hasAuthority('system:user:edit')")
-    public ResponseResult editPwd(@RequestParam String password, @PathVariable String id) {
-        String encodePassword = new SecurityConfig().passwordEncoder().encode(password);
-        String rawPassword = userMapper.getPassword(id);
-        if (rawPassword.equals(encodePassword)) {
-            return ResponseResult.success("与旧密码相同");
-        }
-        userService.update(new LambdaUpdateWrapper<User>()
-                .eq(User::getId, id)
-                .set(User::getPassword, encodePassword)
-                .set(User::getPwdUpdateDate, new Date())
-                .set(User::getUpdateBy, SecurityUtils.getUsername())
-                .set(User::getUpdateTime, new Date()));
-        LoginUser loginUser = SecurityUtils.getLoginUser();
-        redisCache.deleteObject(loginUser.getUuid());
-        return ResponseResult.success(Massage.UPDATE.value());
-    }
-
 //    @ApiOperation(value = "用户删除",notes = "根据 id 删除用户")
 //    @Log(title = "用户管理", businessType = BusinessType.DELETE)
 //    @PostMapping("/remove/{id}")
