@@ -7,18 +7,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
-import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.Comment;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.CommentService;
-import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -31,8 +27,6 @@ public class CommentController {
     @Autowired
     private UserMapper userMapper;
 
-
-    @ApiOperation(value = "评论查询",notes = "根据 用户名 查询评论以及回复")
     @PreAuthorize("@dandelion.hasAuthority('system:comment:query')")
     @GetMapping("/list")
     public ResponseResult queryUser(@RequestParam(defaultValue = "1") Integer currentPage,
@@ -57,7 +51,6 @@ public class CommentController {
         return ResponseResult.success(page);
     }
 
-    @ApiOperation(value = "评论删除")
     @Log(title = "评论管理",businessType = BusinessType.DELETE)
     @PostMapping("/remove/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:comment:remove')")

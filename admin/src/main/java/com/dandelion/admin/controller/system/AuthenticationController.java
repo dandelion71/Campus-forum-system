@@ -6,16 +6,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
-import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.Authentication;
-import com.dandelion.system.dao.Comment;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.AuthenticationService;
 import com.dandelion.system.service.UserService;
-import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -35,7 +32,6 @@ public class AuthenticationController {
     @Autowired
     private UserMapper userMapper;
 
-    @ApiOperation(value = "认证申请管理")
     @PreAuthorize("@dandelion.hasAuthority('system:authentication:list')")
     @GetMapping("/list")
     public ResponseResult listNonePass(@RequestParam(defaultValue = "1") Integer currentPage,
@@ -57,7 +53,6 @@ public class AuthenticationController {
         return ResponseResult.success(page);
     }
 
-    @ApiOperation(value = "认证修改",notes = "认证申请")
     @Log(title = "认证管理",businessType = BusinessType.UPDATE)
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:authentication:edit')")

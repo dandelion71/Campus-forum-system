@@ -1,7 +1,6 @@
 package com.dandelion.admin.controller.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -9,22 +8,16 @@ import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.RedisCache;
-import com.dandelion.common.utils.SecurityUtils;
-import com.dandelion.system.dao.Comment;
 import com.dandelion.system.dao.Posts;
 import com.dandelion.system.dao.ResponseResult;
-import com.dandelion.system.dao.User;
 import com.dandelion.system.mapper.SectionMapper;
 import com.dandelion.system.mapper.TagMapper;
 import com.dandelion.system.mapper.UserMapper;
-import com.dandelion.system.service.CommentService;
 import com.dandelion.system.service.PostsService;
-import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -44,12 +37,8 @@ public class PostsController {
     private SectionMapper sectionMapper;
 
     @Autowired
-    private CommentService commentService;
-
-    @Autowired
     private RedisCache redisCache;
 
-    @ApiOperation(value = "帖子管理")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:list')")
     @GetMapping("/list")
     public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,
@@ -75,7 +64,6 @@ public class PostsController {
         return ResponseResult.success(page);
     }
 
-    @ApiOperation(value = "帖子修改",notes = "根据 ID 设置是否关闭")
     @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
     @PostMapping("/editStatus/{id}/{top}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
@@ -84,7 +72,6 @@ public class PostsController {
         return ResponseResult.success(Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "帖子修改",notes = "根据 ID 设置是否置顶")
     @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
     @PostMapping("/editTop/{id}/{top}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
@@ -96,7 +83,6 @@ public class PostsController {
         return ResponseResult.success(Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "帖子修改",notes = "根据 ID 设置是否加精")
     @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
     @PostMapping("/editElite/{id}/{elite}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
@@ -109,7 +95,6 @@ public class PostsController {
         return ResponseResult.success(Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "帖子删除")
     @Log(title = "帖子管理",businessType = BusinessType.DELETE)
     @PostMapping("/remove/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:remove')")

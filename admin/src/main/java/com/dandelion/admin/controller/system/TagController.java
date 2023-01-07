@@ -8,11 +8,9 @@ import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.ResponseResult;
-import com.dandelion.system.dao.Role;
 import com.dandelion.system.dao.Tag;
 import com.dandelion.system.mapper.TagMapper;
 import com.dandelion.system.service.TagService;
-import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.Assert;
@@ -32,7 +30,6 @@ public class TagController {
     @Autowired
     private TagMapper tagMapper;
 
-    @ApiOperation(value = "分类管理")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:list')")
     @GetMapping("/list")
     public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
@@ -41,14 +38,12 @@ public class TagController {
         return ResponseResult.success(page);
     }
 
-    @ApiOperation(value = "分类查询")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:query')")
     @GetMapping("/queryAll")
     public ResponseResult queryAll(){
         return ResponseResult.success(tagService.list());
     }
 
-    @ApiOperation(value = "分类查询",notes = "根据 ID 查询分类")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:query')")
     @GetMapping("/query/ById/{id}")
     public ResponseResult queryById(@PathVariable String id){
@@ -57,7 +52,6 @@ public class TagController {
         return ResponseResult.success(tag,Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "分类查询",notes = "根据 sectionId 查询分类")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:query')")
     @GetMapping("/query/BySectionId/{sectionId}")
     public ResponseResult queryBySectionId(@PathVariable String sectionId){
@@ -65,7 +59,6 @@ public class TagController {
         return ResponseResult.success(tagIds,Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "分类查询",notes = "根据 tagName 查询分类")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:query')")
     @GetMapping("/query/ByTagName/{tagName}")
     public ResponseResult queryByTagName(@PathVariable String tagName){
@@ -74,7 +67,6 @@ public class TagController {
         return ResponseResult.success(tag,Massage.SELECT.value());
     }
 
-    @ApiOperation(value = "分类添加")
     @Log(title = "分类管理",businessType = BusinessType.INSERT)
     @PreAuthorize("@dandelion.hasAuthority('system:tag:add')")
     @PostMapping("/add")
@@ -88,7 +80,6 @@ public class TagController {
         return ResponseResult.success(Massage.SAVE.value());
     }
 
-    @ApiOperation(value = "分类修改",notes = "根据 id 修改分类")
     @Log(title = "分类管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:edit')")
@@ -102,7 +93,6 @@ public class TagController {
         return ResponseResult.success(Massage.UPDATE.value());
     }
 
-    @ApiOperation(value = "分类删除",notes = "根据 tagId 删除分类")
     @Log(title = "分类管理", businessType = BusinessType.DELETE)
     @PostMapping("/remove/{tagId}")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:remove')")
