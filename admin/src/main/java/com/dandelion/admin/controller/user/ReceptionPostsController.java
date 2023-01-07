@@ -19,11 +19,10 @@ import com.dandelion.system.service.PostsService;
 import com.dandelion.system.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -100,7 +99,7 @@ public class ReceptionPostsController {
 
     @GetMapping("/searchPost")
     public ResponseResult search(@RequestParam(defaultValue = "1") Integer currentPage,
-                                 @RequestParam(defaultValue = "10") Integer pageSize,
+                                 @RequestParam(defaultValue = "20") Integer pageSize,
                                  @RequestParam String value){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
         IPage<PostsVo> page = postsMapper.selectPostByKeyword(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),value);
@@ -157,7 +156,7 @@ public class ReceptionPostsController {
 
     @GetMapping("/commentTime/{sectionId}")
     public ResponseResult queryDefaultPost(@RequestParam(defaultValue = "1") Integer currentPage,
-                                       @RequestParam(defaultValue = "10") Integer pageSize,
+                                       @RequestParam(defaultValue = "20") Integer pageSize,
                                        @PathVariable String sectionId,@RequestParam(defaultValue = "0") String tagId){
         String key = "commentTime-"+sectionId+"-"+tagId+"-"+currentPage;
         Map<String, IPage<PostsVo>> map = redisCache.getCacheMap(key);
@@ -173,7 +172,7 @@ public class ReceptionPostsController {
 
     @GetMapping("/postTime/{sectionId}")
     public ResponseResult queryPostTime(@RequestParam(defaultValue = "1") Integer currentPage,
-                                           @RequestParam(defaultValue = "10") Integer pageSize,
+                                           @RequestParam(defaultValue = "20") Integer pageSize,
                                            @PathVariable String sectionId,@RequestParam(defaultValue = "0") String tagId){
         String key = "postTime-"+sectionId+"-"+tagId+"-"+currentPage;
         Map<String, IPage<PostsVo>> map = redisCache.getCacheMap(key);
@@ -190,7 +189,7 @@ public class ReceptionPostsController {
 
     @GetMapping("/mostLike/{sectionId}")
     public ResponseResult queryMostLike(@RequestParam(defaultValue = "1") Integer currentPage,
-                                           @RequestParam(defaultValue = "10") Integer pageSize,
+                                           @RequestParam(defaultValue = "20") Integer pageSize,
                                            @PathVariable String sectionId,@RequestParam(defaultValue = "0") String tagId){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
         IPage<PostsVo> page = postsMapper.selectPostByTabs(postPage,
@@ -201,7 +200,7 @@ public class ReceptionPostsController {
 
     @GetMapping("/mostHot/{sectionId}")
     public ResponseResult queryMostHot(@RequestParam(defaultValue = "1") Integer currentPage,
-                                           @RequestParam(defaultValue = "10") Integer pageSize,
+                                           @RequestParam(defaultValue = "20") Integer pageSize,
                                            @PathVariable String sectionId,@RequestParam(defaultValue = "0") String tagId){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
         IPage<PostsVo> page = postsMapper.selectPostByTabs(postPage,
@@ -212,7 +211,7 @@ public class ReceptionPostsController {
 
     @GetMapping("/mostSee/{sectionId}")
     public ResponseResult queryMostSee(@RequestParam(defaultValue = "1") Integer currentPage,
-                                           @RequestParam(defaultValue = "10") Integer pageSize,
+                                           @RequestParam(defaultValue = "20") Integer pageSize,
                                            @PathVariable String sectionId,@RequestParam(defaultValue = "0") String tagId){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
         IPage<PostsVo> page = postsMapper.selectPostByTabs(postPage,
@@ -224,7 +223,7 @@ public class ReceptionPostsController {
 
     @GetMapping("/queryAllByUser/{userId}")
     public ResponseResult queryAllByUser(@RequestParam(defaultValue = "1") Integer currentPage,
-                                             @RequestParam(defaultValue = "10") Integer pageSize,
+                                             @RequestParam(defaultValue = "20") Integer pageSize,
                                              @PathVariable String userId){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
         IPage<PostsVo> page = postsMapper.selectAllPostByUser(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),userId);
@@ -234,7 +233,7 @@ public class ReceptionPostsController {
 
     @GetMapping("/queryCollectionByUser/{userId}")
     public ResponseResult queryCollectionByUser(@RequestParam(defaultValue = "1") Integer currentPage,
-                                               @RequestParam(defaultValue = "10") Integer pageSize,
+                                               @RequestParam(defaultValue = "20") Integer pageSize,
                                                @PathVariable String userId){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
         IPage<PostsVo> page = postsMapper.selectPostByUserCollection(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),userId);
@@ -244,7 +243,7 @@ public class ReceptionPostsController {
 
     @GetMapping("/queryEliteByUser/{userId}")
     public ResponseResult queryEliteByUser(@RequestParam(defaultValue = "1") Integer currentPage,
-                                             @RequestParam(defaultValue = "10") Integer pageSize,
+                                             @RequestParam(defaultValue = "20") Integer pageSize,
                                              @PathVariable String userId){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
         IPage<PostsVo> page = postsMapper.selectElitePostByUser(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),userId);

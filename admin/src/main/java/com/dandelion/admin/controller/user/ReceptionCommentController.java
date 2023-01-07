@@ -1,16 +1,13 @@
 package com.dandelion.admin.controller.user;
 
-import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
 import com.dandelion.common.enums.BusinessType;
-import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.RedisCache;
 import com.dandelion.common.utils.SecurityUtils;
-import com.dandelion.common.utils.StringUtils;
 import com.dandelion.system.dao.Comment;
 import com.dandelion.system.dao.Posts;
 import com.dandelion.system.dao.ResponseResult;
@@ -19,7 +16,6 @@ import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.CommentService;
 import com.dandelion.system.service.PostsService;
 import com.dandelion.system.vo.LikesVo;
-import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -74,7 +70,7 @@ public class ReceptionCommentController {
 
     @GetMapping("/queryComment/{postId}")
     public ResponseResult queryComment(@RequestParam(defaultValue = "1") Integer currentPage,
-                                       @RequestParam(defaultValue = "10") Integer pageSize,
+                                       @RequestParam(defaultValue = "20") Integer pageSize,
                                        @PathVariable String postId) {
         String key = "queryCommentPage-"+postId+"-"+currentPage;
         boolean flag = redisCache.existKey(key);

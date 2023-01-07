@@ -1,24 +1,19 @@
 package com.dandelion.admin.controller.user;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dandelion.common.annotation.Log;
-import com.dandelion.common.config.SecurityConfig;
 import com.dandelion.common.enums.BusinessType;
 import com.dandelion.common.enums.Massage;
 import com.dandelion.common.utils.RedisCache;
 import com.dandelion.common.utils.SecurityUtils;
 import com.dandelion.system.dao.*;
 import com.dandelion.system.mapper.PostsMapper;
-import com.dandelion.system.mapper.SectionMapper;
 import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.*;
 import com.dandelion.system.vo.*;
-import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.Assert;
@@ -134,7 +129,7 @@ public class ReceptionUserController {
 
     @GetMapping("/getUserDynamic/{userId}")
     public ResponseResult getUserDynamic(@RequestParam(defaultValue = "1") Integer currentPage,
-                                         @RequestParam(defaultValue = "10") Integer pageSize,
+                                         @RequestParam(defaultValue = "20") Integer pageSize,
                                          @PathVariable String userId){
         Page<UserDynamic> postPage = new Page<>(currentPage, pageSize);
         IPage<UserDynamic> page = userMapper.selectUserDynamic(postPage, userId);
@@ -163,12 +158,6 @@ public class ReceptionUserController {
             return ResponseResult.success(true);
         }
     }
-
-//    @PostMapping("/updateAvatar")
-//    public ResponseResult updateAvatar(@RequestBody Map<String,String> param){
-//        userService.update(new LambdaUpdateWrapper<User>().set(User::getAvatar,param.get("avatar")).eq(User::getId,SecurityUtils.getUserId()));
-//        return ResponseResult.success("");
-//    }
 
     @PostMapping("/editUserName/{username}")
     @PreAuthorize("@dandelion.hasAuthority('user:user:edit')")
