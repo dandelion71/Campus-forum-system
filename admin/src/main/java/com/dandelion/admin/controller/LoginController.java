@@ -47,7 +47,10 @@ public class LoginController {
     @PostMapping("/user/login")
     public ResponseResult login(@RequestBody LoginBody loginBody, HttpServletRequest request) {
         validateCaptcha(loginBody.getCode(),loginBody.getUuid());
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginBody.getUserName(), loginBody.getPassword());
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(
+                        loginBody.getUserName(),
+                        loginBody.getPassword());
         Authentication authenticate = authenticationManager.authenticate(authenticationToken);
         if (Objects.isNull(authenticate)) {
             throw new RuntimeException("登录失败");

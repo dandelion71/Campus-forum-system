@@ -32,7 +32,8 @@ public class TagController {
 
     @PreAuthorize("@dandelion.hasAuthority('system:tag:list')")
     @GetMapping("/list")
-    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,
+                               @RequestParam(defaultValue = "5") Integer pageSize) {
         Page<Tag> tagPage = new Page<>(currentPage, pageSize);
         IPage<Tag> page = tagService.page(tagPage);
         return ResponseResult.success(page);
@@ -72,7 +73,10 @@ public class TagController {
     @PostMapping("/add")
     public ResponseResult add(@RequestBody Tag tag){
         if(Objects.nonNull(tag.getTagName())){
-            Assert.isNull(tagService.getOne(new LambdaQueryWrapper<Tag>().eq(Tag::getTagName, tag.getTagName())), "分类名已存在");
+            Assert.isNull(tagService.getOne(
+                    new LambdaQueryWrapper<Tag>()
+                            .eq(Tag::getTagName, tag.getTagName())),
+                    "分类名已存在");
         }
         tag.setCreateBy(SecurityUtils.getUsername());
         tag.setCreateTime(new Date());
@@ -85,7 +89,10 @@ public class TagController {
     @PreAuthorize("@dandelion.hasAuthority('system:tag:edit')")
     public ResponseResult edit(@RequestBody Tag tag){
         if(Objects.nonNull(tag.getTagName())) {
-            Assert.isNull(tagService.getOne(new LambdaQueryWrapper<Tag>().eq(Tag::getTagName, tag.getTagName())), "分类名已存在");
+            Assert.isNull(tagService.getOne(
+                    new LambdaQueryWrapper<Tag>()
+                            .eq(Tag::getTagName, tag.getTagName())),
+                    "分类名已存在");
         }
         tag.setUpdateBy(SecurityUtils.getUsername());
         tag.setUpdateTime(new Date());
@@ -97,7 +104,8 @@ public class TagController {
     @PostMapping("/remove/{tagId}")
     @PreAuthorize("@dandelion.hasAuthority('system:tag:remove')")
     public ResponseResult remove(@PathVariable String tagId){
-        Tag tag = tagService.getOne(new LambdaQueryWrapper<Tag>().eq(Tag::getId, tagId).ne(Tag::getIsDel, "1"));
+        Tag tag = tagService.getOne(new LambdaQueryWrapper<Tag>()
+                .eq(Tag::getId, tagId).ne(Tag::getIsDel, "1"));
         Assert.notNull(tag,"该分类不可删除");
         tagMapper.deleteSectionTagByTagId(tagId);
         tagMapper.updatePostsTagId(tagId,"2");

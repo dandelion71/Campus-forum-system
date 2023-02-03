@@ -112,7 +112,7 @@ public class ReceptionCommentController {
                     if ("anonymousUser".equals(principal)){
                         comment.setIsEdit(false);
                     }else {
-                        if(SecurityUtils.isAdmin(SecurityUtils.getUserId())){
+                        if(SecurityUtils.isAdmin(userMapper.getRoleId(SecurityUtils.getUserId()))){
                             comment.setIsEdit(true);
                         }else comment.setIsEdit(SecurityUtils.getUserId().equals(comment.getUserId()));
                     }
@@ -129,7 +129,8 @@ public class ReceptionCommentController {
 
     @PreAuthorize("@dandelion.hasAuthority('user:comment:likes')")
     @PostMapping("/addLikes/{commentId}")
-    public ResponseResult addLikes(@RequestParam Map<String,String> map,@PathVariable String commentId){
+    public ResponseResult addLikes(@RequestParam Map<String,String> map,
+                                   @PathVariable String commentId){
         String userId = SecurityUtils.getUserId().toString();
         LikesVo likes = commentMapper.selectLikes(commentId,userId);
         if (Objects.isNull(likes)){
@@ -142,8 +143,12 @@ public class ReceptionCommentController {
             }
         }
         Long likesNum = commentMapper.selectLikesNum(commentId);
-        commentService.update(new LambdaUpdateWrapper<Comment>().eq(Comment::getId,commentId).set(Comment::getLikesNum,likesNum));
-        String postId = commentService.getObj(new LambdaQueryWrapper<Comment>().select(Comment::getPostId).eq(Comment::getId,commentId),Object::toString);
+        commentService.update(new LambdaUpdateWrapper<Comment>()
+                .eq(Comment::getId,commentId)
+                .set(Comment::getLikesNum,likesNum));
+        String postId = commentService.getObj(new LambdaQueryWrapper<Comment>()
+                .select(Comment::getPostId)
+                .eq(Comment::getId,commentId),Object::toString);
         String currentPage = map.get("currentPage");
         redisCache.deleteObject("queryCommentPage-"+postId+"-"+currentPage);
         return ResponseResult.success(likesNum);
@@ -152,7 +157,8 @@ public class ReceptionCommentController {
     @Log(title = "评论管理",businessType = BusinessType.UPDATE)
     @PostMapping("/editComment")
     @PreAuthorize("@dandelion.hasAuthority('user:comment:edit')")
-    public ResponseResult editComment(@RequestParam Map<String,String> map,@RequestBody Comment comment){
+    public ResponseResult editComment(@RequestParam Map<String,String> map,
+                                      @RequestBody Comment comment){
         comment.setUpdateBy(SecurityUtils.getUsername());
         comment.setUpdateTime(new Date());
         commentService.updateById(comment);
@@ -176,6 +182,7 @@ public class ReceptionCommentController {
         redisCache.deleteObject("querySectionById");
         String currentPage= map.get("currentPage");
         redisCache.deleteObject("queryCommentPage-"+comment.getPostId()+"-"+currentPage);
+        redisCache.deleteObject("queryChildrenComment-"+comment.getPostId()+"-"+comment.getParentId()+"-"+currentPage);
         Posts posts = postsService.getById(comment.getPostId());
         redisCache.deleteObject(redisCache.scan("commentTime-"+posts.getSectionId()+"-0-*"));
         redisCache.deleteObject(redisCache.scan("queryPostUser-*-"+SecurityUtils.getUserId()));
@@ -199,7 +206,7 @@ public class ReceptionCommentController {
                 }else {
                     comment.setIsUserLike(likes.getIsLike().equals("0"));
                 }
-                if(SecurityUtils.isAdmin(SecurityUtils.getUserId())){
+                if(SecurityUtils.isAdmin(userMapper.getRoleId(SecurityUtils.getUserId()))){
                     comment.setIsEdit(true);
                 }else comment.setIsEdit(SecurityUtils.getUserId().equals(comment.getUserId()));
             }

@@ -60,6 +60,7 @@ spring:
   redis:
     port: 6379
     host: localhost
+    timeout: 2000
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

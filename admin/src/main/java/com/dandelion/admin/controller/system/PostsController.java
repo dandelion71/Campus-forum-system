@@ -54,7 +54,9 @@ public class PostsController {
             case "4":queryWrapper.eq(Posts::getId,value);break;
         }
         Page<Posts> postsPage = new Page<>(currentPage, pageSize);
-        IPage<Posts> page = postsService.page(postsPage, queryWrapper.orderByDesc(Posts::getCreateTime));
+        IPage<Posts> page = postsService.page(
+                postsPage,
+                queryWrapper.orderByDesc(Posts::getCreateTime));
         List<Posts> records = page.getRecords();
         for (Posts post : records) {
             post.setUser(userMapper.getUserVoById(post.getUserId()));
@@ -65,16 +67,18 @@ public class PostsController {
     }
 
     @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
-    @PostMapping("/editStatus/{id}/{top}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
+    @PostMapping("/editStatus/{id}/{top}")
     public ResponseResult editStatus(@PathVariable String id, @PathVariable String top){
-        postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,id).set(Posts::getStatus,top));
+        postsService.update(new LambdaUpdateWrapper<Posts>()
+                .eq(Posts::getId,id)
+                .set(Posts::getStatus,top));
         return ResponseResult.success(Massage.UPDATE.value());
     }
 
     @Log(title = "帖子管理",businessType = BusinessType.UPDATE)
-    @PostMapping("/editTop/{id}/{top}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:edit')")
+    @PostMapping("/editTop/{id}/{top}")
     public ResponseResult editTop(@PathVariable String id, @PathVariable String top){
         postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,id).set(Posts::getTop,top));
         Posts posts = postsService.getById(id);
@@ -99,8 +103,10 @@ public class PostsController {
     @PostMapping("/remove/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:posts:remove')")
     public ResponseResult remove(@PathVariable String id){
-//        commentService.update(new LambdaUpdateWrapper<Comment>().eq(Comment::getPostId,id).set(Comment::getDelFlag,2));
-        postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,id).set(Posts::getDelFlag,2));
+        postsService.update(
+                new LambdaUpdateWrapper<Posts>()
+                        .eq(Posts::getId,id)
+                        .set(Posts::getDelFlag,2));
         return ResponseResult.success(Massage.DELETE.value());
     }
 }

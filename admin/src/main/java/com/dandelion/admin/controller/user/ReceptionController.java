@@ -8,6 +8,7 @@ import com.dandelion.system.dao.Comment;
 import com.dandelion.system.dao.Posts;
 import com.dandelion.system.dao.ResponseResult;
 import com.dandelion.system.mapper.SectionMapper;
+import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.CommentService;
 import com.dandelion.system.service.PostsService;
 import com.dandelion.system.service.UserService;
@@ -28,6 +29,9 @@ public class ReceptionController {
     private UserService userService;
 
     @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
     private CommentService commentService;
 
     @Autowired
@@ -46,7 +50,7 @@ public class ReceptionController {
         String key = "isModerator-"+sectionId+"-"+SecurityUtils.getUserId() ;
         Boolean isModerator = redisCache.getCacheObject(key);
         if (StringUtils.isNull(isModerator)){
-            if(SecurityUtils.isAdmin(SecurityUtils.getUserId())){
+            if(SecurityUtils.isAdmin(userMapper.getRoleId(SecurityUtils.getUserId()))){
                 redisCache.setCacheObject(key,true,24, TimeUnit.HOURS);
                 return ResponseResult.success(true,"");
             }
@@ -57,14 +61,23 @@ public class ReceptionController {
         return ResponseResult.success(isModerator,"");
     }
 
+    @GetMapping("/isModeratorNoSection")
+    @PreAuthorize("@dandelion.hasAuthority('user:user:edit')")
+    public ResponseResult isModeratorNoSection(){
+            if(SecurityUtils.isAdmin(userMapper.getRoleId(SecurityUtils.getUserId()))){
+                return ResponseResult.success(true,"");
+            }
+        return ResponseResult.success(SecurityUtils.getLoginUser().getRoleKey().equals("moderator"),"");
+    }
+
     @GetMapping("/isAdmin")
     @PreAuthorize("@dandelion.hasAuthority('user:user:edit')")
     public ResponseResult isAdmin(){
         String key = "isAdmin-"+SecurityUtils.getUserId() ;
         Boolean isAdmin = redisCache.getCacheObject(key);
         if (StringUtils.isNull(isAdmin)){
-            isAdmin = SecurityUtils.isAdmin(SecurityUtils.getUserId());
-            redisCache.setCacheObject(key,isAdmin,365, TimeUnit.DAYS);
+            isAdmin = SecurityUtils.isAdmin(userMapper.getRoleId(SecurityUtils.getUserId()));
+            redisCache.setCacheObject(key,isAdmin,7, TimeUnit.DAYS);
         }
         return ResponseResult.success(isAdmin,"");
     }
@@ -86,8 +99,4 @@ public class ReceptionController {
         }
         return ResponseResult.success(map,null);
     }
-
-
-
-
 }

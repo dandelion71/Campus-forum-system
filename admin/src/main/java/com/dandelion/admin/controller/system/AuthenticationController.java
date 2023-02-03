@@ -34,7 +34,7 @@ public class AuthenticationController {
 
     @PreAuthorize("@dandelion.hasAuthority('system:authentication:list')")
     @GetMapping("/list")
-    public ResponseResult listNonePass(@RequestParam(defaultValue = "1") Integer currentPage,
+    public ResponseResult queryAuth(@RequestParam(defaultValue = "1") Integer currentPage,
                                        @RequestParam(defaultValue = "5") Integer pageSize,
                                        @RequestParam(defaultValue = "0") String key,
                                        @RequestParam(defaultValue = "0") String value) {
@@ -46,7 +46,9 @@ public class AuthenticationController {
             case "3":queryWrapper.eq(Authentication::getUserId,value);break;
         }
         Page<Authentication> authenticationPage = new Page<>(currentPage, pageSize);
-        IPage<Authentication> page = authenticationService.page(authenticationPage,queryWrapper.orderByDesc(Authentication::getCreateTime));
+        IPage<Authentication> page = authenticationService.page(
+                authenticationPage,
+                queryWrapper.orderByDesc(Authentication::getCreateTime));
         for (Authentication authentication : page.getRecords()) {
             authentication.setUser(userMapper.getUserVoById(authentication.getUserId()));
         }
@@ -57,7 +59,10 @@ public class AuthenticationController {
     @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('system:authentication:edit')")
     public ResponseResult editPass(@RequestBody Authentication authentication){
-        userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,authentication.getUserId()).set(User::getStatus,authentication.getStatus()));
+        userService.update(
+                new LambdaUpdateWrapper<User>()
+                        .eq(User::getId,authentication.getUserId())
+                        .set(User::getStatus,authentication.getStatus()));
         authentication.setStatus(null);
         authentication.setUpdateBy(SecurityUtils.getUsername());
         authentication.setUpdateTime(new Date());

@@ -31,9 +31,14 @@ public class UserController {
 
     @GetMapping("/list")
     @PreAuthorize("@dandelion.hasAuthority('system:user:list')")
-    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,
+                               @RequestParam(defaultValue = "5") Integer pageSize) {
         Page<User> userPage = new Page<>(currentPage, pageSize);
-        IPage<User> page = userService.page(userPage, new LambdaQueryWrapper<User>().ne(User::getDelFlag, 2).orderByDesc(User::getLoginDate));
+        IPage<User> page = userService.page(
+                userPage,
+                new LambdaQueryWrapper<User>()
+                        .ne(User::getDelFlag, 2)
+                        .orderByDesc(User::getLoginDate));
         List<User> users = userPage.getRecords();
         for (User user : users) {
             user.setRole(userMapper.getRole(user.getId()));

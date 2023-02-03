@@ -1,31 +1,20 @@
 package com.dandelion.admin;
 
-import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.dandelion.common.utils.RedisCache;
-import com.dandelion.common.utils.SecurityUtils;
-import com.dandelion.system.dao.Comment;
-import com.dandelion.system.dao.LoginUser;
-import com.dandelion.system.dao.Muted;
-import com.dandelion.system.mapper.UserMapper;
 import com.dandelion.system.service.MutedService;
-import com.dandelion.system.vo.PostsSimpleVo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 class AdminApplicationTests {
     @Autowired
-    private MutedService mutedService;
+    private RedisCache redisCache;
     @Test
     void redisTest() {
+        long keyExpire = redisCache.getKeyExpire("b5ba2b84-7840-4513-ad76-1f25c5bc3e76", TimeUnit.DAYS);
+        System.out.println(keyExpire);
     }
 }

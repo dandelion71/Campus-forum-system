@@ -159,8 +159,8 @@ public class ReceptionUserController {
         }
     }
 
-    @PostMapping("/editUserName/{username}")
     @PreAuthorize("@dandelion.hasAuthority('user:user:edit')")
+    @PostMapping("/editUserName/{username}")
     public ResponseResult editUserName(@PathVariable String username) {
         String key = "editUserName-"+SecurityUtils.getUserId();
         Map<String, Boolean> map = redisCache.getCacheMap(key);
@@ -178,8 +178,8 @@ public class ReceptionUserController {
         return ResponseResult.success(map.get("flag"));
     }
 
-    @PostMapping("/edit")
     @PreAuthorize("@dandelion.hasAuthority('user:user:edit')")
+    @PostMapping("/edit")
     public ResponseResult edit(@RequestBody User user) {
         user.setId(SecurityUtils.getUserId());
         user.setUpdateBy(SecurityUtils.getUsername());
@@ -213,8 +213,8 @@ public class ReceptionUserController {
     }
 
     @Log(title = "用户密码修改", businessType = BusinessType.UPDATE)
-    @PostMapping("/edit/pwd")
     @PreAuthorize("@dandelion.hasAuthority('user:user:edit')")
+    @PostMapping("/edit/pwd")
     public ResponseResult editPwd(@RequestBody Map<String,String> param) {
         String encodePassword = SecurityUtils.encryptPassword(param.get("newPass"));
         userService.update(new LambdaUpdateWrapper<User>()
@@ -234,8 +234,8 @@ public class ReceptionUserController {
         return ResponseResult.success(authentication,"");
     }
 
-    @PostMapping("/addAuthentication")
     @PreAuthorize("@dandelion.hasAuthority('user:authentication:add')")
+    @PostMapping("/addAuthentication")
     public ResponseResult addAuthentication(@RequestBody Authentication authentication){
         authentication.setCreateTime(new Date());
         authentication.setUserId(SecurityUtils.getUserId());
@@ -260,9 +260,9 @@ public class ReceptionUserController {
     }
 
     private ResponseResult isMuted(String userId){
-        String key = "mutedUser-"+userId;
         Map<String,Object> map = new HashMap<>();
-        if (!redisCache.existKey(key)){
+        Set<String> keys = redisCache.scan("mutedUser-"+userId+ "-*");
+        if (keys.size()==0) {
             String muted = userService.getById(userId).getMuted();
             if ("0".equals(muted)){
                 map.put("flag",false);
@@ -285,7 +285,8 @@ public class ReceptionUserController {
     }
 
     private void checkMuted(String userId){
-        if (!redisCache.existKey("mutedUser-"+userId)) {
+        Set<String> keys = redisCache.scan("mutedUser-"+userId+ "-*");
+        if (keys.size()==0) {
             String muted = userService.getObj(new LambdaQueryWrapper<User>().select(User::getMuted).eq(User::getId,userId),Object::toString);
             if ("1".equals(muted)) {
                 userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,0));

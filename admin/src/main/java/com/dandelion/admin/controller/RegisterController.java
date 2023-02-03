@@ -28,19 +28,22 @@ public class RegisterController {
     @Autowired
     private RedisCache redisCache;
 
-    @ApiOperation(value = "用户注册")
     @PostMapping("/user/register")
     public ResponseResult register(@RequestBody User user) {
-        if(Objects.nonNull(user.getUserName())){
-            Assert.isNull(userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserName, user.getUserName())), "用户名名已存在");
+        if (Objects.nonNull(user.getUserName())) {
+            Assert.isNull(userService.getOne(
+                    new LambdaQueryWrapper<User>()
+                            .eq(User::getUserName, user.getUserName())), "用户名名已存在");
         }
-        if(Objects.nonNull(user.getPhonenumber())){
-            Assert.isNull(userService.getOne(new LambdaQueryWrapper<User>().eq(User::getPhonenumber, user.getPhonenumber())), "手机号已绑定其他用户");
+        if (Objects.nonNull(user.getPhonenumber())) {
+            Assert.isNull(userService.getOne(
+                    new LambdaQueryWrapper<User>()
+                            .eq(User::getPhonenumber, user.getPhonenumber())), "手机号已绑定其他用户");
         }
         user.setCreateTime(new Date());
         user.setPassword(new SecurityConfig().passwordEncoder().encode(user.getPassword()));
         userService.save(user);
-        userMapper.setRole(user.getId(),3L);
+        userMapper.setRole(user.getId(), 3L);
         redisCache.deleteObject("topNums");
         return ResponseResult.success("注册成功");
     }

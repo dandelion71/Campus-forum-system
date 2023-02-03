@@ -50,6 +50,11 @@ public class RedisCache {
         return redisTemplate.hasKey(key);
     }
 
+
+    public long getKeyExpire(final String key,final TimeUnit timeUnit) {
+        return redisTemplate.getExpire(key,timeUnit);
+    }
+
     /**
      * 设置有效时间
      *

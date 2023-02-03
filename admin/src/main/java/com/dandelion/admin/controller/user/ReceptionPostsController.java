@@ -102,7 +102,10 @@ public class ReceptionPostsController {
                                  @RequestParam(defaultValue = "20") Integer pageSize,
                                  @RequestParam String value){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
-        IPage<PostsVo> page = postsMapper.selectPostByKeyword(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),value);
+        IPage<PostsVo> page = postsMapper.selectPostByKeyword(
+                postPage,
+                new QueryWrapper<PostsVo>().orderByDesc("create_time"),
+                value);
         setPostsInfo(page);
         return ResponseResult.success(page);
     }
@@ -119,9 +122,13 @@ public class ReceptionPostsController {
         }
         Map<String, Posts> map = redisCache.getCacheMap(key);
         if (!redisCache.existKey(key)) {
-            Posts post = postsService.getOne(new LambdaQueryWrapper<Posts>().eq(Posts::getId,postId).ne(Posts::getDelFlag,2));
+            Posts post = postsService.getOne(new LambdaQueryWrapper<Posts>()
+                    .eq(Posts::getId,postId)
+                    .ne(Posts::getDelFlag,2));
             Assert.notNull(post,"该帖子已被删除");
-            postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,post.getId()).set(Posts::getSeeNum,post.getSeeNum()+1));
+            postsService.update(new LambdaUpdateWrapper<Posts>()
+                    .eq(Posts::getId,post.getId())
+                    .set(Posts::getSeeNum,post.getSeeNum()+1));
             post.setUser(userMapper.getUserVoById(post.getUserId()));
             post.setTag(tagMapper.getTagVoById(post.getTagId()));
             post.setSection(sectionMapper.getSectionVoById(post.getSectionId()));
@@ -130,21 +137,27 @@ public class ReceptionPostsController {
                 post.setIsUserCollection(true);
                 post.setIsEditPost(false);
             }else {
-                LikesVo likes = postsMapper.selectLikes(postId, SecurityUtils.getUserId().toString());
+                LikesVo likes = postsMapper.selectLikes(
+                        postId,
+                        SecurityUtils.getUserId().toString());
                 if (Objects.isNull(likes)){
                     post.setIsUserLike(true);
                 }else {
                     post.setIsUserLike(likes.getIsLike().equals("0"));
                 }
-                CollectionVo collection = postsMapper.selectCollection(postId,SecurityUtils.getUserId().toString());
+                CollectionVo collection = postsMapper.selectCollection(
+                        postId,
+                        SecurityUtils.getUserId().toString());
                 if (Objects.isNull(collection)){
                     post.setIsUserCollection(true);
                 }else {
                     post.setIsUserCollection(collection.getIsCollection().equals("0"));
                 }
-                if(SecurityUtils.isAdmin(SecurityUtils.getUserId())){
+                if(SecurityUtils.isAdmin(userMapper.getRoleId(SecurityUtils.getUserId()))){
                     post.setIsEditPost(true);
-                }else if(StringUtils.isNotEmpty(sectionMapper.getSectionUser(SecurityUtils.getUserId(),post.getSectionId().toString()))){
+                }else if(StringUtils.isNotEmpty(sectionMapper.getSectionUser(
+                        SecurityUtils.getUserId(),
+                        post.getSectionId().toString()))){
                     post.setIsEditPost(true);
                 }else post.setIsEditPost(SecurityUtils.getUserId().equals(post.getUserId()));
             }
@@ -226,7 +239,10 @@ public class ReceptionPostsController {
                                              @RequestParam(defaultValue = "20") Integer pageSize,
                                              @PathVariable String userId){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
-        IPage<PostsVo> page = postsMapper.selectAllPostByUser(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),userId);
+        IPage<PostsVo> page = postsMapper.selectAllPostByUser(
+                postPage,
+                new QueryWrapper<PostsVo>().orderByDesc("create_time"),
+                userId);
         setPostsInfo(page);
         return ResponseResult.success(page);
     }
@@ -236,7 +252,10 @@ public class ReceptionPostsController {
                                                @RequestParam(defaultValue = "20") Integer pageSize,
                                                @PathVariable String userId){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
-        IPage<PostsVo> page = postsMapper.selectPostByUserCollection(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),userId);
+        IPage<PostsVo> page = postsMapper.selectPostByUserCollection(
+                postPage,
+                new QueryWrapper<PostsVo>().orderByDesc("create_time"),
+                userId);
         setPostsInfo(page);
         return ResponseResult.success(page);
     }
@@ -246,7 +265,10 @@ public class ReceptionPostsController {
                                              @RequestParam(defaultValue = "20") Integer pageSize,
                                              @PathVariable String userId){
         Page<PostsVo> postPage = new Page<>(currentPage, pageSize);
-        IPage<PostsVo> page = postsMapper.selectElitePostByUser(postPage,new QueryWrapper<PostsVo>().orderByDesc("create_time"),userId);
+        IPage<PostsVo> page = postsMapper.selectElitePostByUser(
+                postPage,
+                new QueryWrapper<PostsVo>().orderByDesc("create_time"),
+                userId);
         setPostsInfo(page);
         return ResponseResult.success(page);
     }
@@ -260,6 +282,7 @@ public class ReceptionPostsController {
         redisCache.deleteObject("topNums");
         redisCache.deleteObject("queryNewPost");
         redisCache.deleteObject("querySectionById");
+        redisCache.deleteObject("commentTime-"+post.getSectionId()+"-"+post.getTagId()+"-*");
         redisCache.deleteObject(redisCache.scan("postTime-"+post.getSectionId()+"-0-*"));
         redisCache.deleteObject(redisCache.scan("queryPostUser-*-"+SecurityUtils.getUserId()));
         redisCache.deleteObject(redisCache.scan("queryUserPosts-*-"+SecurityUtils.getUserId()));
@@ -293,7 +316,9 @@ public class ReceptionPostsController {
             }
         }
         Long likesNum = postsMapper.selectLikesNum(postId);
-        postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,postId).set(Posts::getLikesNum,likesNum));
+        postsService.update(new LambdaUpdateWrapper<Posts>()
+                .eq(Posts::getId,postId)
+                .set(Posts::getLikesNum,likesNum));
         redisCache.deleteObject(redisCache.scan("queryPost-"+ postId +"-*"));
         return ResponseResult.success(likesNum);
     }
@@ -313,7 +338,9 @@ public class ReceptionPostsController {
             }
         }
         Long collectionNum = postsMapper.selectCollectionNum(postId);
-        postsService.update(new LambdaUpdateWrapper<Posts>().eq(Posts::getId,postId).set(Posts::getCollectionNum,collectionNum));
+        postsService.update(new LambdaUpdateWrapper<Posts>()
+                .eq(Posts::getId,postId)
+                .set(Posts::getCollectionNum,collectionNum));
         redisCache.deleteObject(redisCache.scan("queryPost-"+ postId +"-*"));
         return ResponseResult.success(collectionNum);
     }

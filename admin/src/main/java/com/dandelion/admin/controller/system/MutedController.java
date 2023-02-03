@@ -45,12 +45,14 @@ public class MutedController {
 
     @PreAuthorize("@dandelion.hasAuthority('system:muted:list')")
     @GetMapping("/list")
-    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize) {
+    public ResponseResult list(@RequestParam(defaultValue = "1") Integer currentPage,
+                               @RequestParam(defaultValue = "5") Integer pageSize) {
         Page<Muted> mutedPage = new Page<>(currentPage, pageSize);
-        IPage<Muted> page = mutedService.page(mutedPage,new LambdaQueryWrapper<Muted>().orderByDesc(Muted::getCreateTime));
+        IPage<Muted> page = mutedService.page(
+                mutedPage,
+                new LambdaQueryWrapper<Muted>().orderByDesc(Muted::getCreateTime));
         List<Muted> mutedList = page.getRecords();
         for (Muted muted : mutedList) {
-            muted.setEffective(checkMuted(muted.getUserId().toString()));
             muted.setUser(userMapper.getUserVoById(muted.getUserId()));
         }
         return ResponseResult.success(page);
@@ -58,13 +60,17 @@ public class MutedController {
 
     @PreAuthorize("@dandelion.hasAuthority('system:muted:query')")
     @GetMapping("/query/byUserName/{userName}")
-    public ResponseResult queryByUserName(@RequestParam(defaultValue = "1") Integer currentPage,@RequestParam(defaultValue = "5") Integer pageSize,@PathVariable String userName) {
+    public ResponseResult queryByUserName(@RequestParam(defaultValue = "1") Integer currentPage,
+                                          @RequestParam(defaultValue = "5") Integer pageSize,
+                                          @PathVariable String userName) {
         Page<Muted> mutedPage = new Page<>(currentPage, pageSize);
-        IPage<Muted> page = mutedMapper.getAllByUserName(mutedPage,new LambdaQueryWrapper<Muted>().orderByDesc(Muted::getCreateTime),userName);
+        IPage<Muted> page = mutedMapper.getAllByUserName(
+                mutedPage,
+                new LambdaQueryWrapper<Muted>().orderByDesc(Muted::getCreateTime),
+                userName);
         List<Muted> mutedList = page.getRecords();
         Assert.notEmpty(mutedList,"未找到该用户的封禁信息");
         for (Muted muted : mutedList) {
-            muted.setEffective(checkMuted(muted.getUserId().toString()));
             muted.setUser(userMapper.getUserVoById(muted.getUserId()));
         }
         return ResponseResult.success(page, Massage.SELECT.value());
@@ -79,22 +85,29 @@ public class MutedController {
             userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,2));
             return ResponseResult.success("永久封禁成功!");
         }
-        String key = "mutedUser-"+userId;
-        Map<String, Object> map = redisCache.getCacheMap(key);
-        if (!redisCache.existKey(key)){
-            Muted muted = new Muted();
-            muted.setUserId(Long.valueOf(userId));
-            muted.setCreateBy(SecurityUtils.getUsername());
-            muted.setCreateTime(new Date());
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(new Date());
-            calendar.add(Calendar.DATE,day);
-            muted.setMutedTime(calendar.getTime());
-            mutedService.save(muted);
-            userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,1));
-            map.put("flag",true);
-            redisCache.setCacheMap(key,map,day, TimeUnit.MINUTES);
+        Set<String> keys = redisCache.scan("mutedUser-"+userId+ "-*");
+        int newDay=day;
+        String key="mutedUser-"+userId+"-"+newDay;
+        if (keys.size()!=0){
+            long keyExpire = redisCache.getKeyExpire(keys.iterator().next(), TimeUnit.MINUTES);
+            redisCache.deleteObject(keys.iterator().next());
+            newDay = Math.toIntExact(day + keyExpire)+1;
+            key="mutedUser-"+userId+"-"+newDay;
         }
+        Map<String, Object> map = redisCache.getCacheMap(key);
+        Muted muted = new Muted();
+        muted.setUserId(Long.valueOf(userId));
+        muted.setCreateBy(SecurityUtils.getUsername());
+        muted.setCreateTime(new Date());
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+        calendar.add(Calendar.DATE,newDay);
+        muted.setMutedTime(calendar.getTime());
+        mutedService.update(new LambdaUpdateWrapper<Muted>().eq(Muted::getUserId,userId).set(Muted::getEffective,1));
+        mutedService.save(muted);
+        userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,1));
+        map.put("flag",true);
+        redisCache.setCacheMap(key,map,newDay, TimeUnit.MINUTES);
         return ResponseResult.success("禁言成功!");
     }
 
@@ -102,21 +115,15 @@ public class MutedController {
     @PreAuthorize("@dandelion.hasAuthority('system:muted:update')")
     @PostMapping("/update/{userId}/{mutedId}")
     public ResponseResult updateEffectiveByUserId(@PathVariable String userId, @PathVariable String mutedId){
-        userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,0));
-        mutedService.update(new LambdaUpdateWrapper<Muted>().eq(Muted::getId,mutedId).eq(Muted::getUserId,userId).set(Muted::getEffective,1));
-        redisCache.deleteObject("mutedUser-"+userId);
+        userService.update(new LambdaUpdateWrapper<User>()
+                .eq(User::getId,userId)
+                .set(User::getMuted,0));
+        mutedService.update(new LambdaUpdateWrapper<Muted>()
+                .eq(Muted::getId,mutedId)
+                .eq(Muted::getUserId,userId)
+                .set(Muted::getEffective,1));
+        Set<String> keys = redisCache.scan("mutedUser-"+userId+ "-*");
+        redisCache.deleteObject(keys);
         return ResponseResult.success("解封成功");
-    }
-
-    private String checkMuted(String userId){
-        if (!redisCache.existKey("mutedUser-"+userId)) {
-            String muted = userService.getObj(new LambdaQueryWrapper<User>().select(User::getMuted).eq(User::getId,userId),Object::toString);
-            if ("1".equals(muted)) {
-                userService.update(new LambdaUpdateWrapper<User>().eq(User::getId,userId).set(User::getMuted,0));
-                mutedService.update(new LambdaUpdateWrapper<Muted>().eq(Muted::getUserId, userId).set(Muted::getEffective, 1));
-            }
-            return "1";
-        }
-        return "0";
     }
 }

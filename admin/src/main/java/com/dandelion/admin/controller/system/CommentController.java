@@ -29,7 +29,7 @@ public class CommentController {
 
     @PreAuthorize("@dandelion.hasAuthority('system:comment:query')")
     @GetMapping("/list")
-    public ResponseResult queryUser(@RequestParam(defaultValue = "1") Integer currentPage,
+    public ResponseResult queryComment(@RequestParam(defaultValue = "1") Integer currentPage,
                                     @RequestParam(defaultValue = "5") Integer pageSize,
                                     @RequestParam(defaultValue = "0") String key,
                                     @RequestParam(defaultValue = "0") String value) {
@@ -42,7 +42,8 @@ public class CommentController {
             case "4":queryWrapper.eq(Comment::getPostId,value);break;
         }
         Page<Comment> commentPage = new Page<>(currentPage, pageSize);
-        IPage<Comment> page = commentService.page(commentPage,queryWrapper.orderByDesc(Comment::getCreateTime));
+        IPage<Comment> page = commentService.page(
+                commentPage,queryWrapper.orderByDesc(Comment::getCreateTime));
         List<Comment> comments = page.getRecords();
         for (Comment comment : comments) {
             comment.setUser(userMapper.getUserVoById(comment.getUserId()));
@@ -55,7 +56,10 @@ public class CommentController {
     @PostMapping("/remove/{id}")
     @PreAuthorize("@dandelion.hasAuthority('system:comment:remove')")
     public ResponseResult remove(@PathVariable String id){
-        commentService.update(new LambdaUpdateWrapper<Comment>().eq(Comment::getId,id).set(Comment::getDelFlag,2));
+        commentService.update(
+                new LambdaUpdateWrapper<Comment>()
+                        .eq(Comment::getId,id)
+                        .set(Comment::getDelFlag,2));
         return ResponseResult.success(Massage.DELETE.value());
     }
 }
